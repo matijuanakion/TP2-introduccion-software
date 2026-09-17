@@ -1,0 +1,12 @@
+# Variables de entorno (contraseñas y ocultos)
+.env
+
+# Entornos virtuales 
+venv/
+.venv/
+env/
+
+# Archivos basura y caché 
+__pycache__/
+
+
