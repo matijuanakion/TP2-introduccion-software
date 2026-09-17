@@ -1,6 +1,6 @@
 from flask import Blueprint, request
-from source.services.canchas_services import procesar_nueva_cancha
-from source.services.canchas_services import filtrar_canchas
+from src.services.canchas_services import procesar_nueva_cancha
+from src.services.canchas_services import filtrar_canchas
 
 # Creamos el Blueprint. Lo llamamos 'canchas_bp' (bp por Blueprint)
 canchas_bp = Blueprint('canchas_bp', __name__)

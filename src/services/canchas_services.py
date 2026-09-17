@@ -1,6 +1,6 @@
 # Importamos las funciones de repositorio
-from source.repositories.func_aux import obtener_todas_las_canchas, guardar_cancha
-from source.repositories.func_aux import obtener_todas_las_canchas
+from src.repositories.func_aux import obtener_todas_las_canchas, guardar_cancha
+from src.repositories.func_aux import obtener_todas_las_canchas
 
 
 def filtrar_canchas(parametro_techada):

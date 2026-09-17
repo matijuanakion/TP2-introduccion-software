@@ -18,3 +18,4 @@ id,nombre,id_deporte,precio_hora,techada,activa
 17,Cancha Nueva Techada,1,1500000,True,True
 18,La Bombonerita Modular,1,35000,False,True
 19,La Bombonerita Modular techada,1,35000,True,True
+20,el cock pelota con techo,1,35000,True,True
