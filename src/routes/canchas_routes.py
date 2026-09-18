@@ -8,11 +8,14 @@ canchas_bp = Blueprint('canchas_bp', __name__)
 
 @canchas_bp.route('/canchas', methods=['GET'])
 def listar_canchas():
-    # 1. Atrapamos lo que el usuario haya escrito en la URL (ej: ?techada=true)
-    filtro_techada = request.args.get('techada')
     
-    # 2. Le pasamos ese dato al servicio para que haga el trabajo pesado
-    resultados = filtrar_canchas(filtro_techada)
+    # 1. agarra parametros de la URL 
+    filtro_techada = request.args.get('techada')
+    limit = request.args.get('limit', default=10, type=int)
+    offset = request.args.get('offset', default=0, type=int)
+
+    # 2. Le pasamos los parametros a la funcion de services
+    resultados = filtrar_canchas(filtro_techada, limit, offset)
     
     # 3. Devolvemos el diccionario con la clave "canchas" que exige el contrato y el código 200
     return {"canchas": resultados}, 200
