@@ -1,26 +1,68 @@
-import csv
+import sqlite3
 
-def obtener_todas_las_canchas():
+
+DB_PATH = 'database/canchas.db'
+
+import sqlite3
+
+DB_PATH = 'database/canchas.db'
+
+# Cambiamos el nombre y agregamos los 3 parámetros que necesitamos
+def obtener_canchas_paginadas(parametro_techada, limit, offset):
+    conexion = sqlite3.connect(DB_PATH)
+    conexion.row_factory = sqlite3.Row 
+    cursor = conexion.cursor()
+    
+    # Armamos la consulta base
+    consulta = "SELECT * FROM canchas"
+    parametros = []
+
+    # Si el usuario mandó el filtro techada, lo sumamos a la consulta SQL
+    if parametro_techada is not None:
+        es_techada = 1 if parametro_techada.lower() == 'true' else 0
+        consulta += " WHERE techada = ?"
+        parametros.append(es_techada)
+        
+    # Agregamos la paginación al final de la consulta
+    consulta += " LIMIT ? OFFSET ?"
+    parametros.extend([limit, offset])
+    
+    # Ejecutamos la consulta dinámica
+    cursor.execute(consulta, parametros)
+    filas = cursor.fetchall()
+    
     canchas = []
-    # Fijate que la ruta ahora tiene que apuntar a la carpeta database
-    with open('database/canchas.csv', mode='r', encoding='utf-8') as archivo:
-        lector = csv.DictReader(archivo)
-        for fila in lector:
-            # Transformamos los textos del CSV a los tipos de datos reales
-            fila['id'] = int(fila['id'])
-            fila['id_deporte'] = int(fila['id_deporte'])
-            fila['precio_hora'] = int(fila['precio_hora'])
-            # Convertimos los strings 'True'/'False' a booleanos reales de Python
-            fila['techada'] = fila['techada'].lower() == 'true'
-            fila['activa'] = fila['activa'].lower() == 'true'
+    for fila in filas:
+        cancha_dict = dict(fila)
+        cancha_dict['techada'] = bool(cancha_dict['techada'])
+        cancha_dict['activa'] = bool(cancha_dict['activa'])
+        canchas.append(cancha_dict)
             
-            canchas.append(fila)
-            
+    conexion.close()
     return canchas
 
-# Agrega la línea al CSV
+
 def guardar_cancha(nueva_cancha):
-    with open('database/canchas.csv', mode='a', encoding='utf-8', newline='') as archivo:
-        columnas = ['id', 'nombre', 'id_deporte', 'precio_hora', 'techada', 'activa']
-        escritor = csv.DictWriter(archivo, fieldnames=columnas)
-        escritor.writerow(nueva_cancha)
+    conexion = sqlite3.connect(DB_PATH)
+    cursor = conexion.cursor()
+    
+    # Fijate que NO le pasamos el 'id'. SQLite lo autoincrementa solo.
+    cursor.execute("""
+        INSERT INTO canchas (nombre, id_deporte, precio_hora, techada, activa)
+        VALUES (?, ?, ?, ?, ?)
+    """, (
+        nueva_cancha['nombre'], 
+        nueva_cancha['id_deporte'], 
+        nueva_cancha['precio_hora'], 
+        nueva_cancha['techada'], 
+        nueva_cancha['activa']
+    ))
+    
+    # Le pedimos a la base de datos qué ID le asignó a la cancha recién creada
+    nuevo_id = cursor.lastrowid
+    nueva_cancha['id'] = nuevo_id
+    
+    conexion.commit()
+    conexion.close()
+    
+    return nueva_cancha
