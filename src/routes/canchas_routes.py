@@ -11,8 +11,8 @@ def listar_canchas():
     
     # 1. agarra parametros de la URL 
     filtro_techada = request.args.get('techada')
-    limit = request.args.get('limit', default=10, type=int)
-    offset = request.args.get('offset', default=0, type=int)
+    limit = request.args.get('_limit', default=10, type=int)
+    offset = request.args.get('_offset', default=0, type=int)
 
     # 2. Le pasamos los parametros a la funcion de services
     resultados = filtrar_canchas(filtro_techada, limit, offset)

@@ -1,15 +1,11 @@
 from flask import Blueprint
+from src.services.deportes_services import listar_deportes
 
 deportes_bp = Blueprint('deportes_bp', __name__)
 
 
 @deportes_bp.route('/deportes', methods=['GET'])
 def obtener_deportes():
-    # El Swagger pide que los deportes sean diccionarios con id y nombre
-    deportes = [
-        {"id": 1, "nombre": "Futbol"},
-        {"id": 2, "nombre": "Tenis"},
-        {"id": 3, "nombre": "Padel"}
-    ]
+    # Los deportes se leen de la base de datos
+    deportes = listar_deportes()
     return {"deportes": deportes}, 200
-
