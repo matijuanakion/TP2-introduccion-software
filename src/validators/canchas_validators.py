@@ -1,4 +1,4 @@
-from src.repositories.func_aux import existe_deporte
+from src.repositories.deportes_repositories import existe_deporte
 
 CAMPOS_OBLIGATORIOS = ['nombre', 'id_deporte', 'precio_hora']
 

@@ -1,13 +1,8 @@
-import sqlite3
-
-
-DB_PATH = 'database/canchas.db'
+from src.db import obtener_cursor
 
 
 def obtener_canchas_paginadas(parametro_techada, limit, offset):
-    conexion = sqlite3.connect(DB_PATH)
-    conexion.row_factory = sqlite3.Row
-    cursor = conexion.cursor()
+    conexion, cursor = obtener_cursor()
 
     # Armamos la consulta base
     consulta = "SELECT * FROM canchas"
@@ -39,8 +34,7 @@ def obtener_canchas_paginadas(parametro_techada, limit, offset):
 
 
 def guardar_cancha(nueva_cancha):
-    conexion = sqlite3.connect(DB_PATH)
-    cursor = conexion.cursor()
+    conexion, cursor = obtener_cursor()
 
     # Fijate que NO le pasamos el 'id'. SQLite lo autoincrementa solo.
     cursor.execute("""
@@ -62,23 +56,3 @@ def guardar_cancha(nueva_cancha):
     conexion.close()
 
     return nueva_cancha
-
-
-def existe_deporte(id_deporte):
-    conexion = sqlite3.connect(DB_PATH)
-    cursor = conexion.cursor()
-    cursor.execute("SELECT COUNT(*) FROM deportes WHERE id = ?", (id_deporte,))
-    cantidad = cursor.fetchone()[0]
-    conexion.close()
-    return cantidad > 0
-
-
-def obtener_deportes():
-    conexion = sqlite3.connect(DB_PATH)
-    conexion.row_factory = sqlite3.Row
-    cursor = conexion.cursor()
-    cursor.execute("SELECT id, nombre FROM deportes ORDER BY id")
-    filas = cursor.fetchall()
-    deportes = [dict(fila) for fila in filas]
-    conexion.close()
-    return deportes

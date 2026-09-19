@@ -1,16 +1,18 @@
-import sqlite3
 import os
+import sqlite3
 
-# Nos aseguramos de que la carpeta database exista
-os.makedirs('database', exist_ok=True)
+from src.config import Config
+
+# Nos aseguramos de que la carpeta de la base exista
+os.makedirs(os.path.dirname(Config.DB_PATH), exist_ok=True)
 
 
-# Conectamos a SQLite (esto crea el archivo canchas.db si no existe)
-conexion = sqlite3.connect('database/canchas.db')
+# Conectamos a SQLite (esto crea el archivo si no existe)
+conexion = sqlite3.connect(Config.DB_PATH)
 cursor = conexion.cursor()
 
 # Leemos el archivo SQL que acabamos de crear
-with open('database/init_db.sql', 'r', encoding='utf-8') as archivo_sql:
+with open(Config.DB_SCHEMA_PATH, 'r', encoding='utf-8') as archivo_sql:
     script_sql = archivo_sql.read()
 
 # Ejecutamos todas las instrucciones juntas
@@ -20,4 +22,4 @@ cursor.executescript(script_sql)
 conexion.commit()
 conexion.close()
 
-print("Base de datos inicializada correctamente en database/canchas.db")
+print(f"Base de datos inicializada correctamente en {Config.DB_PATH}")

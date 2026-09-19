@@ -1,4 +1,4 @@
-from src.repositories.func_aux import obtener_deportes
+from src.repositories.deportes_repositories import obtener_deportes
 
 
 def listar_deportes():

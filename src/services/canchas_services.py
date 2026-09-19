@@ -1,5 +1,5 @@
 # Importamos las funciones de repositorio
-from src.repositories.func_aux import obtener_canchas_paginadas, guardar_cancha
+from src.repositories.canchas_repositories import obtener_canchas_paginadas, guardar_cancha
 from src.validators.canchas_validators import validar_nueva_cancha
 
 
