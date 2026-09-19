@@ -3,8 +3,8 @@ from src.db import obtener_cursor
 
 def existe_deporte(id_deporte):
     conexion, cursor = obtener_cursor()
-    cursor.execute("SELECT COUNT(*) FROM deportes WHERE id = ?", (id_deporte,))
-    cantidad = cursor.fetchone()[0]
+    cursor.execute("SELECT COUNT(*) AS cantidad FROM deportes WHERE id = %s", (id_deporte,))
+    cantidad = cursor.fetchone()['cantidad']
     conexion.close()
     return cantidad > 0
 

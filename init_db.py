@@ -1,25 +1,32 @@
-import os
-import sqlite3
+import mysql.connector
 
 from src.config import Config
 
-# Nos aseguramos de que la carpeta de la base exista
-os.makedirs(os.path.dirname(Config.DB_PATH), exist_ok=True)
-
-
-# Conectamos a SQLite (esto crea el archivo si no existe)
-conexion = sqlite3.connect(Config.DB_PATH)
+# Conectamos al servidor MySQL (sin database) para crearla si no existe
+conexion = mysql.connector.connect(
+    host=Config.DB_HOST,
+    port=Config.DB_PORT,
+    user=Config.DB_USER,
+    password=Config.DB_PASSWORD,
+    charset='utf8mb4',
+)
 cursor = conexion.cursor()
 
-# Leemos el archivo SQL que acabamos de crear
+# Creamos la base de datos si hace falta y la seleccionamos
+cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{Config.DB_NAME}` CHARACTER SET utf8mb4")
+cursor.execute(f"USE `{Config.DB_NAME}`")
+
+# Leemos el archivo SQL con el schema
 with open(Config.DB_SCHEMA_PATH, 'r', encoding='utf-8') as archivo_sql:
     script_sql = archivo_sql.read()
 
 # Ejecutamos todas las instrucciones juntas
-cursor.executescript(script_sql)
+cursor.execute(script_sql)
+while cursor.nextset():
+    pass
 
 # Guardamos los cambios y cerramos
 conexion.commit()
 conexion.close()
 
-print(f"Base de datos inicializada correctamente en {Config.DB_PATH}")
+print(f"Base de datos '{Config.DB_NAME}' inicializada correctamente en {Config.DB_HOST}:{Config.DB_PORT}")

@@ -6,19 +6,19 @@ def _condiciones_para(filtros):
     parametros = []
 
     if filtros.get('id_deporte') is not None:
-        condiciones.append("id_deporte = ?")
+        condiciones.append("id_deporte = %s")
         parametros.append(filtros['id_deporte'])
 
     if filtros.get('nombre'):
-        condiciones.append("LOWER(nombre) LIKE ?")
+        condiciones.append("LOWER(nombre) LIKE %s")
         parametros.append(f"%{str(filtros['nombre']).lower()}%")
 
     if filtros.get('techada') is not None:
-        condiciones.append("techada = ?")
+        condiciones.append("techada = %s")
         parametros.append(1 if filtros['techada'] else 0)
 
     if filtros.get('activa') is not None:
-        condiciones.append("activa = ?")
+        condiciones.append("activa = %s")
         parametros.append(1 if filtros['activa'] else 0)
 
     where = (" WHERE " + " AND ".join(condiciones)) if condiciones else ""
@@ -31,7 +31,7 @@ def obtener_canchas_paginadas(filtros, limit, offset):
     where, parametros = _condiciones_para(filtros)
 
     # Agregamos la paginación al final de la consulta
-    consulta = "SELECT * FROM canchas" + where + " LIMIT ? OFFSET ?"
+    consulta = "SELECT * FROM canchas" + where + " LIMIT %s OFFSET %s"
     parametros.extend([limit, offset])
 
     cursor.execute(consulta, parametros)
@@ -53,8 +53,8 @@ def contar_canchas(filtros):
 
     where, parametros = _condiciones_para(filtros)
 
-    cursor.execute("SELECT COUNT(*) FROM canchas" + where, parametros)
-    cantidad = cursor.fetchone()[0]
+    cursor.execute("SELECT COUNT(*) AS cantidad FROM canchas" + where, parametros)
+    cantidad = cursor.fetchone()['cantidad']
 
     conexion.close()
     return cantidad
@@ -63,10 +63,10 @@ def contar_canchas(filtros):
 def guardar_cancha(nueva_cancha):
     conexion, cursor = obtener_cursor()
 
-    # Fijate que NO le pasamos el 'id'. SQLite lo autoincrementa solo.
+    # Fijate que NO le pasamos el 'id'. MySQL lo autoincrementa solo.
     cursor.execute("""
         INSERT INTO canchas (nombre, id_deporte, precio_hora, techada, activa)
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (%s, %s, %s, %s, %s)
     """, (
         nueva_cancha['nombre'],
         nueva_cancha['id_deporte'],

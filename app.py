@@ -6,6 +6,7 @@ from src.config import Config
 
 app = Flask(__name__)
 app.secret_key = Config.SECRET_KEY
+app.json.ensure_ascii = False
 
 
 app.register_blueprint(canchas_bp)
