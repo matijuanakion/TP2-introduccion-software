@@ -21,14 +21,6 @@ CREATE TABLE IF NOT EXISTS canchas (
     CONSTRAINT fk_canchas_deporte FOREIGN KEY (id_deporte) REFERENCES deportes (id)
 ) DEFAULT CHARSET=utf8mb4;
 
--- canchas de prueba (solo si la tabla está vacía) --
-INSERT INTO canchas (nombre, id_deporte, precio_hora, techada, activa)
-SELECT 'Cancha Central', 1, 1000000, 1, 1
-WHERE NOT EXISTS (SELECT 1 FROM canchas);
-INSERT INTO canchas (nombre, id_deporte, precio_hora, techada, activa)
-SELECT 'Cancha Auxiliar', 1, 800000, 0, 1
-WHERE NOT EXISTS (SELECT 1 FROM canchas);
-
 -- ---------------------------------------------------------------------------
 -- Socios
 -- ---------------------------------------------------------------------------

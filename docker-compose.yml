@@ -12,33 +12,18 @@ services:
       - "${DB_PORT:-3306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      # El entrypoint de MySQL corre database/initdb.sh la primera vez que se crea
+      # el volumen. El script ejecuta los .sql con --default-character-set=utf8mb4
+      # para no romper los acentos. Sin pip install ni problemas de timing.
+      - ./database/init_db.sql:/sql/01-init_db.sql:ro
+      - ./database/seed.sql:/sql/02-seed.sql:ro
+      - ./database/initdb.sh:/docker-entrypoint-initdb.d/00-initdb.sh:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-root_password}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-P", "3306", "-u", "root", "-p${DB_ROOT_PASSWORD:-root_password}"]
       interval: 5s
       timeout: 5s
-      retries: 10
-
-  # Crea tablas y seeds corriendo python init_db.py (charset utf8mb4 correcto).
-  # Arranca solo cuando db está healthy y termina al seedear.
-  init_db:
-    image: python:3.12-slim
-    depends_on:
-      db:
-        condition: service_healthy
-    environment:
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_NAME: ${DB_NAME:-club_deportivo}
-      DB_USER: ${DB_USER:-app_user}
-      DB_PASSWORD: ${DB_PASSWORD:-app_password}
-      DB_SCHEMA_PATH: database/init_db.sql
-    volumes:
-      - .:/app
-    working_dir: /app
-    command: >
-      sh -c "pip install --quiet -r requirements.txt &&
-             python init_db.py"
-    restart: "no"
+      retries: 24
+      start_period: 90s
 
 volumes:
   mysql_data:
