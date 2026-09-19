@@ -1,11 +1,16 @@
-# Importamos las funciones de repositorio
-from src.repositories.canchas_repositories import obtener_canchas_paginadas, guardar_cancha
+from src.errores import error_respuesta
+from src.repositories.canchas_repositories import (
+    obtener_canchas_paginadas,
+    contar_canchas,
+    guardar_cancha,
+)
 from src.validators.canchas_validators import validar_nueva_cancha
 
 
-def filtrar_canchas(parametro_techada, limit, offset):
-    # Simplemente le pasamos los parámetros al archivero y devolvemos lo que nos da
-    return obtener_canchas_paginadas(parametro_techada, limit, offset)
+def filtrar_canchas(filtros, limit, offset):
+    canchas = obtener_canchas_paginadas(filtros, limit, offset)
+    total = contar_canchas(filtros)
+    return canchas, total
 
 
 def procesar_nueva_cancha(datos):
@@ -13,7 +18,7 @@ def procesar_nueva_cancha(datos):
     errores, nueva_cancha = validar_nueva_cancha(datos)
 
     if errores:
-        return {"error": errores[0]['mensaje']}, errores[0]['status']
+        return error_respuesta(errores[0]['mensaje'], codigo=errores[0]['codigo']), errores[0]['status']
 
     # 2. Mandar a guardar al archivero y que nos devuelva la cancha con su ID oficial
     cancha_guardada = guardar_cancha(nueva_cancha)

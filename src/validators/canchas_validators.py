@@ -3,14 +3,15 @@ from src.repositories.deportes_repositories import existe_deporte
 CAMPOS_OBLIGATORIOS = ['nombre', 'id_deporte', 'precio_hora']
 
 
+def _error(mensaje, codigo='ERROR_VALIDACION', status=400):
+    return {"mensaje": mensaje, "codigo": codigo, "status": status}
+
+
 def validar_campos_obligatorios(datos):
     errores = []
     for campo in CAMPOS_OBLIGATORIOS:
         if campo not in datos:
-            errores.append({
-                "mensaje": f"Falta el campo obligatorio '{campo}'",
-                "status": 400,
-            })
+            errores.append(_error(f"Falta el campo obligatorio '{campo}'", "CAMPO_OBLIGATORIO"))
     return errores
 
 
@@ -27,44 +28,23 @@ def validar_nueva_cancha(datos):
     activa = datos.get('activa', True)
 
     if nombre == "":
-        errores.append({
-            "mensaje": "El campo 'nombre' no puede estar vacío o ser solo espacios",
-            "status": 400,
-        })
+        errores.append(_error("El campo 'nombre' no puede estar vacío o ser solo espacios", "NOMBRE_VACIO"))
 
     if not isinstance(id_deporte, int):
-        errores.append({
-            "mensaje": "El campo 'id_deporte' debe ser un entero",
-            "status": 400,
-        })
+        errores.append(_error("El campo 'id_deporte' debe ser un entero", "TIPO_INVALIDO"))
     elif not existe_deporte(id_deporte):
-        errores.append({
-            "mensaje": f"No existe un deporte con id {id_deporte}",
-            "status": 404,
-        })
+        errores.append(_error(f"No existe un deporte con id {id_deporte}", "DEPORTE_INEXISTENTE", 404))
 
     if not isinstance(precio, int):
-        errores.append({
-            "mensaje": "El campo 'precio_hora' debe ser un entero",
-            "status": 400,
-        })
+        errores.append(_error("El campo 'precio_hora' debe ser un entero", "PRECIO_INVALIDO"))
     elif precio <= 0:
-        errores.append({
-            "mensaje": "El campo 'precio_hora' debe ser mayor a cero",
-            "status": 400,
-        })
+        errores.append(_error("El campo 'precio_hora' debe ser mayor a cero", "PRECIO_INVALIDO"))
 
     if not isinstance(techada, bool):
-        errores.append({
-            "mensaje": "El campo 'techada' debe ser un booleano",
-            "status": 400,
-        })
+        errores.append(_error("El campo 'techada' debe ser un booleano", "TIPO_INVALIDO"))
 
     if not isinstance(activa, bool):
-        errores.append({
-            "mensaje": "El campo 'activa' debe ser un booleano",
-            "status": 400,
-        })
+        errores.append(_error("El campo 'activa' debe ser un booleano", "TIPO_INVALIDO"))
 
     if errores:
         return errores, None

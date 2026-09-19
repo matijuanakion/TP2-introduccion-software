@@ -1,24 +1,39 @@
 from src.db import obtener_cursor
 
 
-def obtener_canchas_paginadas(parametro_techada, limit, offset):
-    conexion, cursor = obtener_cursor()
-
-    # Armamos la consulta base
-    consulta = "SELECT * FROM canchas"
+def _condiciones_para(filtros):
+    condiciones = []
     parametros = []
 
-    # Si el usuario mandó el filtro techada, lo sumamos a la consulta SQL
-    if parametro_techada is not None:
-        es_techada = 1 if parametro_techada.lower() == 'true' else 0
-        consulta += " WHERE techada = ?"
-        parametros.append(es_techada)
+    if filtros.get('id_deporte') is not None:
+        condiciones.append("id_deporte = ?")
+        parametros.append(filtros['id_deporte'])
+
+    if filtros.get('nombre'):
+        condiciones.append("LOWER(nombre) LIKE ?")
+        parametros.append(f"%{str(filtros['nombre']).lower()}%")
+
+    if filtros.get('techada') is not None:
+        condiciones.append("techada = ?")
+        parametros.append(1 if filtros['techada'] else 0)
+
+    if filtros.get('activa') is not None:
+        condiciones.append("activa = ?")
+        parametros.append(1 if filtros['activa'] else 0)
+
+    where = (" WHERE " + " AND ".join(condiciones)) if condiciones else ""
+    return where, parametros
+
+
+def obtener_canchas_paginadas(filtros, limit, offset):
+    conexion, cursor = obtener_cursor()
+
+    where, parametros = _condiciones_para(filtros)
 
     # Agregamos la paginación al final de la consulta
-    consulta += " LIMIT ? OFFSET ?"
+    consulta = "SELECT * FROM canchas" + where + " LIMIT ? OFFSET ?"
     parametros.extend([limit, offset])
 
-    # Ejecutamos la consulta dinámica
     cursor.execute(consulta, parametros)
     filas = cursor.fetchall()
 
@@ -31,6 +46,18 @@ def obtener_canchas_paginadas(parametro_techada, limit, offset):
 
     conexion.close()
     return canchas
+
+
+def contar_canchas(filtros):
+    conexion, cursor = obtener_cursor()
+
+    where, parametros = _condiciones_para(filtros)
+
+    cursor.execute("SELECT COUNT(*) FROM canchas" + where, parametros)
+    cantidad = cursor.fetchone()[0]
+
+    conexion.close()
+    return cantidad
 
 
 def guardar_cancha(nueva_cancha):
