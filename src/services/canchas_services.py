@@ -1,5 +1,6 @@
 from src.errores import error_respuesta
 from src.repositories.canchas_repositories import (
+    obtener_cancha_por_id,
     obtener_canchas_paginadas,
     contar_canchas,
     guardar_cancha,
@@ -25,3 +26,15 @@ def procesar_nueva_cancha(datos):
 
     # 3. Devolver éxito
     return {"mensaje": "Cancha creada", "cancha": cancha_guardada}, 201
+
+
+def consultar_cancha(id_cancha):
+    cancha = obtener_cancha_por_id(id_cancha)
+
+    if cancha is None:
+        return error_respuesta(
+            f"No existe una cancha con id {id_cancha}",
+            codigo="CANCHA_INEXISTENTE",
+        ), 404
+
+    return cancha, 200
