@@ -12,12 +12,10 @@ services:
       - "${DB_PORT:-3306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      # El entrypoint de MySQL corre database/initdb.sh la primera vez que se crea
-      # el volumen. El script ejecuta los .sql con --default-character-set=utf8mb4
-      # para no romper los acentos. Sin pip install ni problemas de timing.
-      - ./database/init_db.sql:/sql/01-init_db.sql:ro
-      - ./database/seed.sql:/sql/02-seed.sql:ro
-      - ./database/initdb.sh:/docker-entrypoint-initdb.d/00-initdb.sh:ro
+      # Si la base de datos está vacía (es decir, la primera vez que levantas el proyecto), MySQL revisa la carpeta /docker-entrypoint-initdb.d/ y ejecuta los scripts de esa carpeta
+      - ./database/init_db.sql:/sql/01-init_db.sql:ro                    # Read Only (Copia el script de init en el contenedor)
+      - ./database/seed.sql:/sql/02-seed.sql:ro                          # Read Only (Copia el script de seed de la db en el contenedor)
+      - ./database/initdb.sh:/docker-entrypoint-initdb.d/00-initdb.sh:ro # Read Only (Copia el script que ejecuta correctamente ambos scripts .sql)
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-P", "3306", "-u", "root", "-p${DB_ROOT_PASSWORD:-root_password}"]
       interval: 5s
