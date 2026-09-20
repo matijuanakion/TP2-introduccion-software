@@ -31,7 +31,11 @@ def obtener_canchas_paginadas(filtros, limit, offset):
     where, parametros = _condiciones_para(filtros)
 
     # Agregamos la paginación al final de la consulta
-    consulta = "SELECT * FROM canchas" + where + " LIMIT %s OFFSET %s"
+    consulta = (
+        "SELECT * FROM canchas"
+        + where
+        + " ORDER BY id ASC LIMIT %s OFFSET %s"
+    )
     parametros.extend([limit, offset])
 
     cursor.execute(consulta, parametros)
@@ -83,3 +87,28 @@ def guardar_cancha(nueva_cancha):
     conexion.close()
 
     return nueva_cancha
+
+
+def obtener_cancha_por_id(id_cancha):
+    conexion, cursor = obtener_cursor()
+
+    try:
+        cursor.execute(
+            "SELECT * FROM canchas WHERE id = %s",
+            (id_cancha,)
+        )
+
+        fila = cursor.fetchone()
+
+        if fila is None:
+            return None
+
+        cancha = dict(fila)
+        cancha['techada'] = bool(cancha['techada'])
+        cancha['activa'] = bool(cancha['activa'])
+
+        return cancha
+
+    finally:
+        cursor.close()
+        conexion.close()

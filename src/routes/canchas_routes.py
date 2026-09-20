@@ -1,15 +1,44 @@
 from flask import Blueprint, request
 
 from src.errores import error_respuesta
-from src.services.canchas_services import filtrar_canchas, procesar_nueva_cancha
+
+from src.services.canchas_services import (
+    consultar_cancha,
+    filtrar_canchas,
+    procesar_nueva_cancha,
+)
 from src.utils import armar_links
 
 # Creamos el Blueprint. Lo llamamos 'canchas_bp' (bp por Blueprint)
 canchas_bp = Blueprint('canchas_bp', __name__)
 
 
+def _validar_parametros(permitidos=()):
+    desconocidos = sorted(set(request.args) - set(permitidos))
+
+    if desconocidos:
+        return error_respuesta(
+            f"Parámetros desconocidos: {', '.join(desconocidos)}",
+            codigo="PARAMETRO_DESCONOCIDO",
+        ), 400
+
+    return None
+
+
 @canchas_bp.route('/canchas', methods=['GET'])
 def listar_canchas():
+    error = _validar_parametros({
+        'id_deporte',
+        'nombre',
+        'techada',
+        'activa',
+        '_limit',
+        '_offset',
+    })
+
+    if error:
+        return error
+
     filtros = {}
 
     # Filtro por deporte
@@ -39,14 +68,13 @@ def listar_canchas():
     except ValueError:
         return error_respuesta("Los parámetros '_limit' y '_offset' deben ser enteros"), 400
 
-    if limit < 1 or offset < 0:
-        return error_respuesta("'_limit' debe ser mayor a 0 y '_offset' mayor o igual a 0"), 400
-
+    if not 1 <= limit <= 100 or offset < 0:
+        return error_respuesta(
+        "'_limit' debe estar entre 1 y 100 y '_offset' ser mayor o igual a 0"
+        ), 400
     # Le pasamos los parámetros a la funcion de services
     canchas, total = filtrar_canchas(filtros, limit, offset)
 
-    if total == 0:
-        return '', 204
 
     base_url = request.host_url.rstrip('/') + request.path
     links = armar_links(base_url, filtros, limit, offset, total)
@@ -63,4 +91,31 @@ def crear_cancha():
         return error_respuesta("El cuerpo de la solicitud no puede estar vacío"), 400
 
     respuesta, status_code = procesar_nueva_cancha(datos)
+    return respuesta, status_code
+
+
+@canchas_bp.route('/canchas/<id_cancha>', methods=['GET'])
+def obtener_cancha(id_cancha):
+    error = _validar_parametros()
+
+    if error:
+        return error
+
+    try:
+        id_numerico = (
+            int(id_cancha)
+            if id_cancha.isascii() and id_cancha.isdecimal()
+            else 0
+        )
+    except ValueError:
+        id_numerico = 0
+
+    if id_numerico <= 0:
+        return error_respuesta(
+            "El parámetro 'id' debe ser un entero positivo",
+            codigo="ID_INVALIDO",
+        ), 400
+
+    respuesta, status_code = consultar_cancha(id_numerico)
+
     return respuesta, status_code
