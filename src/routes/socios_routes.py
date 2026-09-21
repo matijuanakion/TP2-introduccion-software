@@ -6,7 +6,7 @@ from src.services.socios_services import (
     filtrar_socios,
     procesar_nuevo_socio,
 )
-from src.utils import armar_links, obtener_paginacion, validar_parametros
+from src.utils import armar_links, obtener_paginacion, validar_id, validar_parametros
 
 socios_bp = Blueprint('socios_bp', __name__)
 
@@ -19,20 +19,9 @@ def obtener_socio(id_socio):
         if error:
             return error
 
-        try:
-            id_numerico = (
-                int(id_socio)
-                if id_socio.isascii() and id_socio.isdecimal()
-                else 0
-            )
-        except ValueError:
-            id_numerico = 0
-
-        if id_numerico <= 0:
-            return error_respuesta(
-                "El parámetro 'id' debe ser un entero positivo",
-                codigo="ID_INVALIDO",
-            ), 400
+        id_numerico, error, status_code = validar_id(id_socio)
+        if error:
+            return error, status_code
 
         respuesta, status_code = consultar_socio(id_numerico)
         return respuesta, status_code

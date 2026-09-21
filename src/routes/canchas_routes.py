@@ -13,7 +13,7 @@ from src.services.canchas_services import (
     procesar_nueva_cancha,
 )
 
-from src.utils import armar_links, obtener_paginacion, validar_parametros
+from src.utils import armar_links, obtener_paginacion, validar_id, validar_parametros
 
 canchas_bp = Blueprint('canchas_bp', __name__)
 
@@ -199,20 +199,9 @@ def obtener_cancha(id_cancha):
         if error:
             return error
 
-        try:
-            id_numerico = (
-                int(id_cancha)
-                if id_cancha.isascii() and id_cancha.isdecimal()
-                else 0
-            )
-        except ValueError:
-            id_numerico = 0
-
-        if id_numerico <= 0:
-            return error_respuesta(
-                "El parámetro 'id' debe ser un entero positivo",
-                codigo="ID_INVALIDO",
-            ), 400
+        id_numerico, error, status_code = validar_id(id_cancha)
+        if error:
+            return error, status_code
 
         respuesta, status_code = consultar_cancha(id_numerico)
 
@@ -233,20 +222,9 @@ def actualizar_cancha_por_id(id_cancha):
         if error:
             return error
 
-        try:
-            id_numerico = (
-                int(id_cancha)
-                if id_cancha.isascii() and id_cancha.isdecimal()
-                else 0
-            )
-        except ValueError:
-            id_numerico = 0
-
-        if id_numerico <= 0:
-            return error_respuesta(
-                "El parámetro 'id' debe ser un entero positivo",
-                codigo="ID_INVALIDO",
-            ), 400
+        id_numerico, error, status_code = validar_id(id_cancha)
+        if error:
+            return error, status_code
 
         datos = request.get_json(silent=True)
         if datos is None or not isinstance(datos, dict):
@@ -272,20 +250,9 @@ def eliminar_cancha_por_id(id_cancha):
         if error:
             return error
 
-        try:
-            id_numerico = (
-                int(id_cancha)
-                if id_cancha.isascii() and id_cancha.isdecimal()
-                else 0
-            )
-        except ValueError:
-            id_numerico = 0
-
-        if id_numerico <= 0:
-            return error_respuesta(
-                "El parámetro 'id' debe ser un entero positivo",
-                codigo="ID_INVALIDO",
-            ), 400
+        id_numerico, error, status_code = validar_id(id_cancha)
+        if error:
+            return error, status_code
 
         return procesar_eliminacion_cancha(id_numerico)
     except Exception as exc:

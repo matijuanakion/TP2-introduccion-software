@@ -44,6 +44,25 @@ def obtener_paginacion():
     return limit, offset, None, None
 
 
+def validar_id(id_parametro):
+    try:
+        id_numerico = (
+            int(id_parametro)
+            if id_parametro.isascii() and id_parametro.isdecimal()
+            else 0
+        )
+    except ValueError:
+        id_numerico = 0
+
+    if id_numerico <= 0:
+        return None, error_respuesta(
+            "El parámetro 'id' debe ser un entero positivo",
+            codigo="ID_INVALIDO",
+        ), 400
+
+    return id_numerico, None, None
+
+
 def validar_parametros(permitidos=()):
     desconocidos = sorted(set(request.args) - set(permitidos))
 
