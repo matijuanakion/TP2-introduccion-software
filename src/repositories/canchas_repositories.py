@@ -109,3 +109,27 @@ def obtener_cancha_por_id(id_cancha):
     finally:
         cursor.close()
         conexion.close()
+
+
+def actualizar_cancha(id_cancha, cancha):
+    conexion, cursor = obtener_cursor()
+
+    try:
+        cursor.execute(
+            """
+            UPDATE canchas
+            SET nombre = %s, precio_hora = %s, techada = %s, activa = %s
+            WHERE id = %s
+            """,
+            (
+                cancha['nombre'],
+                cancha['precio_hora'],
+                cancha['techada'],
+                cancha['activa'],
+                id_cancha,
+            ),
+        )
+        conexion.commit()
+    finally:
+        cursor.close()
+        conexion.close()

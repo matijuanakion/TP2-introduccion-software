@@ -4,8 +4,12 @@ from src.repositories.canchas_repositories import (
     obtener_canchas_paginadas,
     contar_canchas,
     guardar_cancha,
+    actualizar_cancha,
 )
-from src.validators.canchas_validators import validar_nueva_cancha
+from src.validators.canchas_validators import (
+    validar_actualizacion_cancha,
+    validar_nueva_cancha,
+)
 
 
 def filtrar_canchas(filtros, limit, offset):
@@ -48,3 +52,34 @@ def consultar_cancha(id_cancha):
         ), 404
 
     return cancha, 200
+
+
+def procesar_actualizacion_cancha(id_cancha, datos):
+    cancha_actual = obtener_cancha_por_id(id_cancha)
+
+    if cancha_actual is None:
+        return error_respuesta(
+            f"No existe una cancha con id {id_cancha}",
+            codigo="CANCHA_INEXISTENTE",
+        ), 404
+
+    errores, cancha_actualizada = validar_actualizacion_cancha(datos, cancha_actual)
+
+    if errores:
+        return (
+            {
+                "errors": [
+                    {
+                        "code": error["code"],
+                        "message": error["message"],
+                        "level": error.get("level", "error"),
+                        "description": error.get("description", error["message"]),
+                    }
+                    for error in errores
+                ]
+            },
+            max((error.get("status", 400) for error in errores), default=400),
+        )
+
+    actualizar_cancha(id_cancha, cancha_actualizada)
+    return "", 204

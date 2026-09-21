@@ -5,6 +5,7 @@ from src.errores import error_respuesta
 from src.services.canchas_services import (
     consultar_cancha,
     filtrar_canchas,
+    procesar_actualizacion_cancha,
     procesar_nueva_cancha,
 )
 
@@ -118,6 +119,45 @@ def obtener_cancha(id_cancha):
         respuesta, status_code = consultar_cancha(id_numerico)
 
         return respuesta, status_code
+    except Exception as exc:
+        return error_respuesta(
+            "Error interno del servidor",
+            codigo="ERROR_INTERNO",
+            descripcion=str(exc),
+        ), 500
+
+
+@canchas_bp.route('/canchas/<id_cancha>', methods=['PATCH'])
+def actualizar_cancha_por_id(id_cancha):
+    try:
+        error = validar_parametros()
+
+        if error:
+            return error
+
+        try:
+            id_numerico = (
+                int(id_cancha)
+                if id_cancha.isascii() and id_cancha.isdecimal()
+                else 0
+            )
+        except ValueError:
+            id_numerico = 0
+
+        if id_numerico <= 0:
+            return error_respuesta(
+                "El parámetro 'id' debe ser un entero positivo",
+                codigo="ID_INVALIDO",
+            ), 400
+
+        datos = request.get_json(silent=True)
+        if datos is None or not isinstance(datos, dict):
+            return error_respuesta(
+                "El cuerpo de la solicitud debe ser un objeto JSON",
+                codigo="CUERPO_INVALIDO",
+            ), 400
+
+        return procesar_actualizacion_cancha(id_numerico, datos)
     except Exception as exc:
         return error_respuesta(
             "Error interno del servidor",

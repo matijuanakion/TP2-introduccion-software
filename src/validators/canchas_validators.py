@@ -2,6 +2,7 @@ from src.errores import crear_error
 from src.repositories.deportes_repositories import existe_deporte
 
 CAMPOS_OBLIGATORIOS = ['nombre', 'id_deporte', 'precio_hora']
+CAMPOS_EDITABLES = {'nombre', 'precio_hora', 'techada', 'activa'}
 
 
 def validar_campos_obligatorios(datos):
@@ -103,3 +104,44 @@ def validar_nueva_cancha(datos):
         "activa": activa,
     }
     return None, cancha
+
+
+def validar_actualizacion_cancha(datos, cancha_actual):
+    errores = []
+
+    campos_no_editables = set(datos) - CAMPOS_EDITABLES
+    if campos_no_editables:
+        errores.append(
+            crear_error(
+                f"Campos no editables: {', '.join(sorted(campos_no_editables))}",
+                codigo="CAMPO_NO_EDITABLE",
+                incluir_status=True,
+            )
+        )
+
+    if not datos:
+        errores.append(
+            crear_error(
+                "Debe indicarse al menos un campo editable",
+                codigo="CUERPO_VACIO",
+                incluir_status=True,
+            )
+        )
+
+    datos_completos = {
+        'nombre': cancha_actual['nombre'],
+        'id_deporte': cancha_actual['id_deporte'],
+        'precio_hora': cancha_actual['precio_hora'],
+        'techada': cancha_actual['techada'],
+        'activa': cancha_actual['activa'],
+    }
+    datos_completos.update({campo: datos[campo] for campo in datos if campo in CAMPOS_EDITABLES})
+
+    errores_alta, cancha_validada = validar_nueva_cancha(datos_completos)
+    if errores_alta:
+        errores.extend(errores_alta)
+
+    if errores:
+        return errores, None
+
+    return None, cancha_validada
