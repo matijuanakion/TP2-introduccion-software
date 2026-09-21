@@ -51,6 +51,28 @@ def contar_socios(filtros):
     return cantidad
 
 
+def obtener_socio_por_id(id_socio):
+    conexion, cursor = obtener_cursor()
+
+    try:
+        cursor.execute(
+            "SELECT * FROM socios WHERE id = %s",
+            (id_socio,)
+        )
+
+        fila = cursor.fetchone()
+
+        if fila is None:
+            return None
+
+        socio = dict(fila)
+        socio['activo'] = bool(socio['activo'])
+        return socio
+    finally:
+        cursor.close()
+        conexion.close()
+
+
 def guardar_socio(nuevo_socio):
     conexion, cursor = obtener_cursor()
 
