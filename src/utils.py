@@ -27,6 +27,23 @@ def armar_links(base_url, filtros, limit, offset, total):
     }
 
 
+def obtener_paginacion():
+    try:
+        limit = int(request.args.get('_limit', 10))
+        offset = int(request.args.get('_offset', 0))
+    except ValueError:
+        return None, None, error_respuesta(
+            "Los parámetros '_limit' y '_offset' deben ser enteros"
+        ), 400
+
+    if not 1 <= limit <= 100 or offset < 0:
+        return None, None, error_respuesta(
+            "'_limit' debe estar entre 1 y 100 y '_offset' ser mayor o igual a 0"
+        ), 400
+
+    return limit, offset, None, None
+
+
 def validar_parametros(permitidos=()):
     desconocidos = sorted(set(request.args) - set(permitidos))
 

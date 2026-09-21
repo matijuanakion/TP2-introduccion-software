@@ -13,7 +13,7 @@ from src.services.canchas_services import (
     procesar_nueva_cancha,
 )
 
-from src.utils import armar_links, validar_parametros
+from src.utils import armar_links, obtener_paginacion, validar_parametros
 
 canchas_bp = Blueprint('canchas_bp', __name__)
 
@@ -102,18 +102,9 @@ def listar_canchas_disponibles():
                 ), 400
             filtros['techada'] = techada.lower() == 'true'
 
-        try:
-            limit = int(request.args.get('_limit', 10))
-            offset = int(request.args.get('_offset', 0))
-        except ValueError:
-            return error_respuesta(
-                "Los parámetros '_limit' y '_offset' deben ser enteros"
-            ), 400
-
-        if not 1 <= limit <= 100 or offset < 0:
-            return error_respuesta(
-                "'_limit' debe estar entre 1 y 100 y '_offset' ser mayor o igual a 0"
-            ), 400
+        limit, offset, error, status_code = obtener_paginacion()
+        if error:
+            return error, status_code
 
         canchas, total = filtrar_canchas_disponibles(filtros, limit, offset)
         base_url = request.host_url.rstrip('/') + request.path
@@ -161,16 +152,9 @@ def listar_canchas():
                     return error_respuesta(f"El parámetro '{campo}' debe ser true o false"), 400
                 filtros[campo] = valor.lower() == 'true'
 
-        try:
-            limit = int(request.args.get('_limit', 10))
-            offset = int(request.args.get('_offset', 0))
-        except ValueError:
-            return error_respuesta("Los parámetros '_limit' y '_offset' deben ser enteros"), 400
-
-        if not 1 <= limit <= 100 or offset < 0:
-            return error_respuesta(
-            "'_limit' debe estar entre 1 y 100 y '_offset' ser mayor o igual a 0"
-            ), 400
+        limit, offset, error, status_code = obtener_paginacion()
+        if error:
+            return error, status_code
 
         canchas, total = filtrar_canchas(filtros, limit, offset)
 

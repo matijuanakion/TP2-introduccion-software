@@ -2,7 +2,7 @@ from flask import Blueprint, request
 
 from src.errores import error_respuesta
 from src.services.socios_services import filtrar_socios
-from src.utils import armar_links, validar_parametros
+from src.utils import armar_links, obtener_paginacion, validar_parametros
 
 socios_bp = Blueprint('socios_bp', __name__)
 
@@ -28,18 +28,9 @@ def listar_socios():
                 ), 400
             filtros['activo'] = activo.lower() == 'true'
 
-        try:
-            limit = int(request.args.get('_limit', 10))
-            offset = int(request.args.get('_offset', 0))
-        except ValueError:
-            return error_respuesta(
-                "Los parámetros '_limit' y '_offset' deben ser enteros"
-            ), 400
-
-        if not 1 <= limit <= 100 or offset < 0:
-            return error_respuesta(
-                "'_limit' debe estar entre 1 y 100 y '_offset' ser mayor o igual a 0"
-            ), 400
+        limit, offset, error, status_code = obtener_paginacion()
+        if error:
+            return error, status_code
 
         socios, total = filtrar_socios(filtros, limit, offset)
         base_url = request.host_url.rstrip('/') + request.path
