@@ -18,15 +18,19 @@ def procesar_nueva_cancha(datos):
     errores, nueva_cancha = validar_nueva_cancha(datos)
 
     if errores:
-        error = errores[0]
         return (
-            error_respuesta(
-                error["message"],
-                codigo=error["code"],
-                descripcion=error.get("description"),
-                nivel=error.get("level", "error"),
-            ),
-            error.get("status", 400),
+            {
+                "errors": [
+                    {
+                        "code": error["code"],
+                        "message": error["message"],
+                        "level": error.get("level", "error"),
+                        "description": error.get("description", error["message"]),
+                    }
+                    for error in errores
+                ]
+            },
+            max((error.get("status", 400) for error in errores), default=400),
         )
 
     cancha_guardada = guardar_cancha(nueva_cancha)
