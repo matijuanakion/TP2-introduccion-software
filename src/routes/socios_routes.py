@@ -5,6 +5,7 @@ from src.services.socios_services import (
     consultar_socio,
     filtrar_socios,
     procesar_nuevo_socio,
+    procesar_actualizacion_socio,
 )
 from src.utils import armar_links, obtener_paginacion, validar_id, validar_parametros
 
@@ -25,6 +26,34 @@ def obtener_socio(id_socio):
 
         respuesta, status_code = consultar_socio(id_numerico)
         return respuesta, status_code
+    except Exception as exc:
+        return error_respuesta(
+            "Error interno del servidor",
+            codigo="ERROR_INTERNO",
+            descripcion=str(exc),
+        ), 500
+
+
+@socios_bp.route('/socios/<id_socio>', methods=['PATCH'])
+def actualizar_socio_por_id(id_socio):
+    try:
+        error = validar_parametros()
+
+        if error:
+            return error
+
+        id_numerico, error, status_code = validar_id(id_socio)
+        if error:
+            return error, status_code
+
+        datos = request.get_json(silent=True)
+        if datos is None or not isinstance(datos, dict):
+            return error_respuesta(
+                "El cuerpo de la solicitud debe ser un objeto JSON",
+                codigo="CUERPO_INVALIDO",
+            ), 400
+
+        return procesar_actualizacion_socio(id_numerico, datos)
     except Exception as exc:
         return error_respuesta(
             "Error interno del servidor",

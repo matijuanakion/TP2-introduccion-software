@@ -100,3 +100,30 @@ def guardar_socio(nuevo_socio):
     socio_guardado = dict(nuevo_socio)
     socio_guardado['id'] = nuevo_id
     return socio_guardado
+
+
+def actualizar_socio(id_socio, socio):
+    conexion, cursor = obtener_cursor()
+
+    try:
+        cursor.execute(
+            """
+            UPDATE socios
+            SET nombre = %s, email = %s, activo = %s
+            WHERE id = %s
+            """,
+            (
+                socio['nombre'],
+                socio['email'],
+                socio['activo'],
+                id_socio,
+            ),
+        )
+        conexion.commit()
+        return True
+    except mysql.connector.IntegrityError:
+        conexion.rollback()
+        return False
+    finally:
+        cursor.close()
+        conexion.close()
