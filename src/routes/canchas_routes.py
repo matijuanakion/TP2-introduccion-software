@@ -7,6 +7,7 @@ from src.services.canchas_services import (
     filtrar_canchas,
     procesar_nueva_cancha,
 )
+
 from src.utils import armar_links, validar_parametros
 
 canchas_bp = Blueprint('canchas_bp', __name__)
@@ -62,7 +63,7 @@ def listar_canchas():
     links = armar_links(base_url, filtros, limit, offset, total)
 
     if len(canchas) == 0:
-        return {"canchas": canchas, "_links": links}, 204
+        return "", 204
 
     return {"canchas": canchas, "_links": links}, 200
 

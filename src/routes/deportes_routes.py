@@ -9,6 +9,6 @@ def obtener_deportes():
     deportes = listar_deportes()
 
     if len(deportes) == 0:
-        return {"deportes": deportes}, 204
+        return "", 204
 
     return {"deportes": deportes}, 200

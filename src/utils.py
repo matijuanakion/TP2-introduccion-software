@@ -1,3 +1,8 @@
+from flask import request
+
+from src.errores import error_respuesta
+
+
 def armar_href(base_url, filtros, limit, offset):
     parametros = []
     for campo, valor in filtros.items():
@@ -20,6 +25,7 @@ def armar_links(base_url, filtros, limit, offset, total):
         "_next": armar_href(base_url, filtros, limit, next_offset) if next_offset is not None else None,
         "_last": armar_href(base_url, filtros, limit, last_offset),
     }
+
 
 def validar_parametros(permitidos=()):
     desconocidos = sorted(set(request.args) - set(permitidos))
