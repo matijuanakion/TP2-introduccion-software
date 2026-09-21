@@ -20,3 +20,14 @@ def armar_links(base_url, filtros, limit, offset, total):
         "_next": armar_href(base_url, filtros, limit, next_offset) if next_offset is not None else None,
         "_last": armar_href(base_url, filtros, limit, last_offset),
     }
+
+def validar_parametros(permitidos=()):
+    desconocidos = sorted(set(request.args) - set(permitidos))
+
+    if desconocidos:
+        return error_respuesta(
+            f"Parámetros desconocidos: {', '.join(desconocidos)}",
+            codigo="PARAMETRO_DESCONOCIDO",
+        ), 400
+
+    return None

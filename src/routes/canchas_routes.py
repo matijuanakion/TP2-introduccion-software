@@ -7,27 +7,13 @@ from src.services.canchas_services import (
     filtrar_canchas,
     procesar_nueva_cancha,
 )
-from src.utils import armar_links
+from src.utils import armar_links, validar_parametros
 
-# Creamos el Blueprint. Lo llamamos 'canchas_bp' (bp por Blueprint)
 canchas_bp = Blueprint('canchas_bp', __name__)
-
-
-def _validar_parametros(permitidos=()):
-    desconocidos = sorted(set(request.args) - set(permitidos))
-
-    if desconocidos:
-        return error_respuesta(
-            f"Parámetros desconocidos: {', '.join(desconocidos)}",
-            codigo="PARAMETRO_DESCONOCIDO",
-        ), 400
-
-    return None
-
 
 @canchas_bp.route('/canchas', methods=['GET'])
 def listar_canchas():
-    error = _validar_parametros({
+    error = validar_parametros({
         'id_deporte',
         'nombre',
         'techada',
@@ -41,19 +27,16 @@ def listar_canchas():
 
     filtros = {}
 
-    # Filtro por deporte
     id_deporte = request.args.get('id_deporte')
     if id_deporte is not None:
         if not id_deporte.isdigit():
             return error_respuesta("El parámetro 'id_deporte' debe ser un entero"), 400
         filtros['id_deporte'] = int(id_deporte)
 
-    # Filtro por nombre (búsqueda parcial e insensible a mayúsculas)
     nombre = request.args.get('nombre')
     if nombre is not None:
         filtros['nombre'] = nombre
 
-    # Filtros booleanos: techada y activa
     for campo in ('techada', 'activa'):
         valor = request.args.get(campo)
         if valor is not None:
@@ -61,7 +44,6 @@ def listar_canchas():
                 return error_respuesta(f"El parámetro '{campo}' debe ser true o false"), 400
             filtros[campo] = valor.lower() == 'true'
 
-    # Paginación
     try:
         limit = int(request.args.get('_limit', 10))
         offset = int(request.args.get('_offset', 0))
@@ -72,14 +54,16 @@ def listar_canchas():
         return error_respuesta(
         "'_limit' debe estar entre 1 y 100 y '_offset' ser mayor o igual a 0"
         ), 400
-    # Le pasamos los parámetros a la funcion de services
+
     canchas, total = filtrar_canchas(filtros, limit, offset)
 
 
     base_url = request.host_url.rstrip('/') + request.path
     links = armar_links(base_url, filtros, limit, offset, total)
 
-    # Devolvemos el diccionario con la clave "canchas" que exige el contrato y el código 200
+    if len(canchas) == 0:
+        return {"canchas": canchas, "_links": links}, 204
+
     return {"canchas": canchas, "_links": links}, 200
 
 
@@ -96,7 +80,7 @@ def crear_cancha():
 
 @canchas_bp.route('/canchas/<id_cancha>', methods=['GET'])
 def obtener_cancha(id_cancha):
-    error = _validar_parametros()
+    error = validar_parametros()
 
     if error:
         return error

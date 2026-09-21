@@ -92,6 +92,8 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/GetCancha200'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -876,15 +878,16 @@ components:
       name: id
       in: path
       required: true
-      description: Identificador entero positivo del recurso
+      description: Identificador entero positivo del recurso. Si el valor no es válido, el servicio responde 400.
       schema:
         type: integer
+        minimum: 1
       example: 1
 
     Limit:
       name: _limit
       in: query
-      description: Cantidad máxima de registros por página
+      description: Cantidad máxima de registros por página. Debe ser un entero entre 1 y 100; de lo contrario se responde 400.
       schema:
         type: integer
         minimum: 1
@@ -895,7 +898,7 @@ components:
     Offset:
       name: _offset
       in: query
-      description: Desplazamiento desde el primer registro
+      description: Desplazamiento desde el primer registro. Debe ser un entero mayor o igual a 0; si no, se responde 400.
       schema:
         type: integer
         minimum: 0

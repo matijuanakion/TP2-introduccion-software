@@ -2,9 +2,7 @@ import os
 
 from dotenv import load_dotenv
 
-# Carga las variables del archivo .env (si existe) sin pisar las del sistema
 load_dotenv()
-
 
 class Config:
     # Base de datos MySQL

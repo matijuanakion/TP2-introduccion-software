@@ -6,6 +6,9 @@ deportes_bp = Blueprint('deportes_bp', __name__)
 
 @deportes_bp.route('/deportes', methods=['GET'])
 def obtener_deportes():
-    # Los deportes se leen de la base de datos
     deportes = listar_deportes()
+
+    if len(deportes) == 0:
+        return {"deportes": deportes}, 204
+
     return {"deportes": deportes}, 200

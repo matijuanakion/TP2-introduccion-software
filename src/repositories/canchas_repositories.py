@@ -30,7 +30,6 @@ def obtener_canchas_paginadas(filtros, limit, offset):
 
     where, parametros = _condiciones_para(filtros)
 
-    # Agregamos la paginación al final de la consulta
     consulta = (
         "SELECT * FROM canchas"
         + where
@@ -67,7 +66,6 @@ def contar_canchas(filtros):
 def guardar_cancha(nueva_cancha):
     conexion, cursor = obtener_cursor()
 
-    # Fijate que NO le pasamos el 'id'. MySQL lo autoincrementa solo.
     cursor.execute("""
         INSERT INTO canchas (nombre, id_deporte, precio_hora, techada, activa)
         VALUES (%s, %s, %s, %s, %s)
@@ -79,7 +77,6 @@ def guardar_cancha(nueva_cancha):
         nueva_cancha['activa']
     ))
 
-    # Le pedimos a la base de datos qué ID le asignó a la cancha recién creada
     nuevo_id = cursor.lastrowid
     nueva_cancha['id'] = nuevo_id
 
