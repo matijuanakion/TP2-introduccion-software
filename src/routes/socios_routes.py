@@ -1,10 +1,28 @@
 from flask import Blueprint, request
 
 from src.errores import error_respuesta
-from src.services.socios_services import filtrar_socios
+from src.services.socios_services import filtrar_socios, procesar_nuevo_socio
 from src.utils import armar_links, obtener_paginacion, validar_parametros
 
 socios_bp = Blueprint('socios_bp', __name__)
+
+
+@socios_bp.route('/socios', methods=['POST'])
+def crear_socio():
+    try:
+        datos = request.get_json()
+
+        if not datos:
+            return error_respuesta("El cuerpo de la solicitud no puede estar vacío"), 400
+
+        respuesta, status_code = procesar_nuevo_socio(datos)
+        return respuesta, status_code
+    except Exception as exc:
+        return error_respuesta(
+            "Error interno del servidor",
+            codigo="ERROR_INTERNO",
+            descripcion=str(exc),
+        ), 500
 
 
 @socios_bp.route('/socios', methods=['GET'])

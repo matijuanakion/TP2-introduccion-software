@@ -1,3 +1,5 @@
+import mysql.connector
+
 from src.db import obtener_cursor
 
 
@@ -47,3 +49,32 @@ def contar_socios(filtros):
 
     conexion.close()
     return cantidad
+
+
+def guardar_socio(nuevo_socio):
+    conexion, cursor = obtener_cursor()
+
+    try:
+        cursor.execute(
+            """
+            INSERT INTO socios (nombre, email, activo)
+            VALUES (%s, %s, %s)
+            """,
+            (
+                nuevo_socio['nombre'],
+                nuevo_socio['email'],
+                nuevo_socio['activo'],
+            ),
+        )
+        nuevo_id = cursor.lastrowid
+        conexion.commit()
+    except mysql.connector.IntegrityError:
+        conexion.rollback()
+        return None
+    finally:
+        cursor.close()
+        conexion.close()
+
+    socio_guardado = dict(nuevo_socio)
+    socio_guardado['id'] = nuevo_id
+    return socio_guardado
