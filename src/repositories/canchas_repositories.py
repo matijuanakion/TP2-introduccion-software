@@ -133,3 +133,39 @@ def actualizar_cancha(id_cancha, cancha):
     finally:
         cursor.close()
         conexion.close()
+
+
+def eliminar_cancha_si_sin_reservas(id_cancha):
+    conexion, cursor = obtener_cursor()
+
+    try:
+        cursor.execute(
+            "SELECT id FROM canchas WHERE id = %s FOR UPDATE",
+            (id_cancha,)
+        )
+
+        if cursor.fetchone() is None:
+            conexion.rollback()
+            return 'inexistente'
+
+        cursor.execute(
+            "SELECT 1 FROM reservas WHERE id_cancha = %s LIMIT 1",
+            (id_cancha,)
+        )
+
+        if cursor.fetchone() is not None:
+            conexion.rollback()
+            return 'con_reservas'
+
+        cursor.execute(
+            "DELETE FROM canchas WHERE id = %s",
+            (id_cancha,)
+        )
+        conexion.commit()
+        return 'eliminada'
+    except Exception:
+        conexion.rollback()
+        raise
+    finally:
+        cursor.close()
+        conexion.close()

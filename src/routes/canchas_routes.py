@@ -6,6 +6,7 @@ from src.services.canchas_services import (
     consultar_cancha,
     filtrar_canchas,
     procesar_actualizacion_cancha,
+    procesar_eliminacion_cancha,
     procesar_nueva_cancha,
 )
 
@@ -158,6 +159,38 @@ def actualizar_cancha_por_id(id_cancha):
             ), 400
 
         return procesar_actualizacion_cancha(id_numerico, datos)
+    except Exception as exc:
+        return error_respuesta(
+            "Error interno del servidor",
+            codigo="ERROR_INTERNO",
+            descripcion=str(exc),
+        ), 500
+
+
+@canchas_bp.route('/canchas/<id_cancha>', methods=['DELETE'])
+def eliminar_cancha_por_id(id_cancha):
+    try:
+        error = validar_parametros()
+
+        if error:
+            return error
+
+        try:
+            id_numerico = (
+                int(id_cancha)
+                if id_cancha.isascii() and id_cancha.isdecimal()
+                else 0
+            )
+        except ValueError:
+            id_numerico = 0
+
+        if id_numerico <= 0:
+            return error_respuesta(
+                "El parámetro 'id' debe ser un entero positivo",
+                codigo="ID_INVALIDO",
+            ), 400
+
+        return procesar_eliminacion_cancha(id_numerico)
     except Exception as exc:
         return error_respuesta(
             "Error interno del servidor",

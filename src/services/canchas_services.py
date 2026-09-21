@@ -5,6 +5,7 @@ from src.repositories.canchas_repositories import (
     contar_canchas,
     guardar_cancha,
     actualizar_cancha,
+    eliminar_cancha_si_sin_reservas,
 )
 from src.validators.canchas_validators import (
     validar_actualizacion_cancha,
@@ -82,4 +83,22 @@ def procesar_actualizacion_cancha(id_cancha, datos):
         )
 
     actualizar_cancha(id_cancha, cancha_actualizada)
+    return "", 204
+
+
+def procesar_eliminacion_cancha(id_cancha):
+    resultado = eliminar_cancha_si_sin_reservas(id_cancha)
+
+    if resultado == 'inexistente':
+        return error_respuesta(
+            f"No existe una cancha con id {id_cancha}",
+            codigo="CANCHA_INEXISTENTE",
+        ), 404
+
+    if resultado == 'con_reservas':
+        return error_respuesta(
+            f"No se puede eliminar la cancha con id {id_cancha} porque tiene reservas asociadas",
+            codigo="CANCHA_CON_RESERVAS",
+        ), 409
+
     return "", 204
