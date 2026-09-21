@@ -13,7 +13,13 @@ from src.services.canchas_services import (
     procesar_nueva_cancha,
 )
 
-from src.utils import armar_links, obtener_paginacion, validar_id, validar_parametros
+from src.utils import (
+    armar_links,
+    obtener_datos_json,
+    obtener_paginacion,
+    validar_id,
+    validar_parametros,
+)
 
 canchas_bp = Blueprint('canchas_bp', __name__)
 
@@ -226,12 +232,9 @@ def actualizar_cancha_por_id(id_cancha):
         if error:
             return error, status_code
 
-        datos = request.get_json(silent=True)
-        if datos is None or not isinstance(datos, dict):
-            return error_respuesta(
-                "El cuerpo de la solicitud debe ser un objeto JSON",
-                codigo="CUERPO_INVALIDO",
-            ), 400
+        datos, error, status_code = obtener_datos_json()
+        if error:
+            return error, status_code
 
         return procesar_actualizacion_cancha(id_numerico, datos)
     except Exception as exc:

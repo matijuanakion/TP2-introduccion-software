@@ -7,7 +7,13 @@ from src.services.socios_services import (
     procesar_nuevo_socio,
     procesar_actualizacion_socio,
 )
-from src.utils import armar_links, obtener_paginacion, validar_id, validar_parametros
+from src.utils import (
+    armar_links,
+    obtener_datos_json,
+    obtener_paginacion,
+    validar_id,
+    validar_parametros,
+)
 
 socios_bp = Blueprint('socios_bp', __name__)
 
@@ -46,12 +52,9 @@ def actualizar_socio_por_id(id_socio):
         if error:
             return error, status_code
 
-        datos = request.get_json(silent=True)
-        if datos is None or not isinstance(datos, dict):
-            return error_respuesta(
-                "El cuerpo de la solicitud debe ser un objeto JSON",
-                codigo="CUERPO_INVALIDO",
-            ), 400
+        datos, error, status_code = obtener_datos_json()
+        if error:
+            return error, status_code
 
         return procesar_actualizacion_socio(id_numerico, datos)
     except Exception as exc:

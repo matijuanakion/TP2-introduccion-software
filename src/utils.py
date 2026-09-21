@@ -63,6 +63,18 @@ def validar_id(id_parametro):
     return id_numerico, None, None
 
 
+def obtener_datos_json():
+    datos = request.get_json(silent=True)
+
+    if datos is None or not isinstance(datos, dict):
+        return None, error_respuesta(
+            "El cuerpo de la solicitud debe ser un objeto JSON",
+            codigo="CUERPO_INVALIDO",
+        ), 400
+
+    return datos, None, None
+
+
 def validar_parametros(permitidos=()):
     desconocidos = sorted(set(request.args) - set(permitidos))
 
