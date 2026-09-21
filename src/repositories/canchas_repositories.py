@@ -63,6 +63,85 @@ def contar_canchas(filtros):
     return cantidad
 
 
+def _condiciones_disponibilidad(filtros, fecha_hora_inicio, fecha_hora_fin):
+    condiciones = [
+        "c.activa = 1",
+        "NOT EXISTS ("
+        "SELECT 1 FROM reservas r "
+        "WHERE r.id_cancha = c.id "
+        "AND r.estado NOT IN ('cancelada', 'finalizada') "
+        "AND r.fecha_hora_inicio < %s "
+        "AND r.fecha_hora_fin > %s"
+        ")",
+        "NOT EXISTS ("
+        "SELECT 1 FROM bloqueos b "
+        "WHERE b.id_cancha = c.id "
+        "AND b.fecha = %s "
+        "AND b.hora_inicio < %s "
+        "AND b.hora_fin > %s"
+        ")",
+    ]
+    parametros = [
+        fecha_hora_fin,
+        fecha_hora_inicio,
+        filtros['fecha'],
+        filtros['hora_fin'],
+        filtros['hora_inicio'],
+    ]
+
+    if filtros.get('id_deporte') is not None:
+        condiciones.append("c.id_deporte = %s")
+        parametros.append(filtros['id_deporte'])
+
+    if filtros.get('techada') is not None:
+        condiciones.append("c.techada = %s")
+        parametros.append(1 if filtros['techada'] else 0)
+
+    return " WHERE " + " AND ".join(condiciones), parametros
+
+
+def obtener_canchas_disponibles(filtros, limit, offset):
+    conexion, cursor = obtener_cursor()
+
+    fecha_hora_inicio = f"{filtros['fecha']} {filtros['hora_inicio']}"
+    fecha_hora_fin = f"{filtros['fecha']} {filtros['hora_fin']}"
+    where, parametros = _condiciones_disponibilidad(
+        filtros, fecha_hora_inicio, fecha_hora_fin
+    )
+
+    cursor.execute(
+        "SELECT c.* FROM canchas c" + where +
+        " ORDER BY c.id ASC LIMIT %s OFFSET %s",
+        parametros + [limit, offset],
+    )
+    filas = cursor.fetchall()
+    conexion.close()
+
+    canchas = []
+    for fila in filas:
+        cancha = dict(fila)
+        cancha['techada'] = bool(cancha['techada'])
+        cancha['activa'] = bool(cancha['activa'])
+        canchas.append(cancha)
+
+    return canchas
+
+
+def contar_canchas_disponibles(filtros):
+    conexion, cursor = obtener_cursor()
+
+    fecha_hora_inicio = f"{filtros['fecha']} {filtros['hora_inicio']}"
+    fecha_hora_fin = f"{filtros['fecha']} {filtros['hora_fin']}"
+    where, parametros = _condiciones_disponibilidad(
+        filtros, fecha_hora_inicio, fecha_hora_fin
+    )
+
+    cursor.execute("SELECT COUNT(*) AS cantidad FROM canchas c" + where, parametros)
+    cantidad = cursor.fetchone()['cantidad']
+    conexion.close()
+    return cantidad
+
+
 def guardar_cancha(nueva_cancha):
     conexion, cursor = obtener_cursor()
 

@@ -153,8 +153,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/GetCanchasList200'
-        '204':
-          $ref: '#/components/responses/NoContent'
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':

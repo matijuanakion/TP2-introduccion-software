@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask import Blueprint, request
 
 from src.errores import error_respuesta
@@ -5,6 +7,7 @@ from src.errores import error_respuesta
 from src.services.canchas_services import (
     consultar_cancha,
     filtrar_canchas,
+    filtrar_canchas_disponibles,
     procesar_actualizacion_cancha,
     procesar_eliminacion_cancha,
     procesar_nueva_cancha,
@@ -13,6 +16,116 @@ from src.services.canchas_services import (
 from src.utils import armar_links, validar_parametros
 
 canchas_bp = Blueprint('canchas_bp', __name__)
+
+
+@canchas_bp.route('/canchas/disponibles', methods=['GET'])
+def listar_canchas_disponibles():
+    try:
+        error = validar_parametros({
+            'fecha',
+            'hora_inicio',
+            'hora_fin',
+            'id_deporte',
+            'techada',
+            '_limit',
+            '_offset',
+        })
+        if error:
+            return error
+
+        fecha = request.args.get('fecha')
+        hora_inicio = request.args.get('hora_inicio')
+        hora_fin = request.args.get('hora_fin')
+
+        if not fecha or not hora_inicio or not hora_fin:
+            return error_respuesta(
+                "Los parámetros 'fecha', 'hora_inicio' y 'hora_fin' son obligatorios",
+                codigo="PARAMETRO_OBLIGATORIO",
+            ), 400
+
+        try:
+            datetime.strptime(fecha, '%Y-%m-%d')
+        except ValueError:
+            return error_respuesta(
+                "El parámetro 'fecha' debe tener formato YYYY-MM-DD",
+                codigo="FECHA_INVALIDA",
+            ), 400
+
+        try:
+            inicio = datetime.strptime(hora_inicio, '%H:%M:%S')
+            fin = datetime.strptime(hora_fin, '%H:%M:%S')
+        except ValueError:
+            return error_respuesta(
+                "Los parámetros 'hora_inicio' y 'hora_fin' deben tener formato HH:00:00",
+                codigo="HORARIO_INVALIDO",
+            ), 400
+
+        if (
+            len(hora_inicio) != 8
+            or len(hora_fin) != 8
+            or hora_inicio[2:] != ':00:00'
+            or hora_fin[2:] != ':00:00'
+        ):
+            return error_respuesta(
+                "Los horarios deben comenzar exactamente en una hora",
+                codigo="HORARIO_INVALIDO",
+            ), 400
+
+        duracion = (fin - inicio).seconds // 3600
+        if fin <= inicio or duracion not in (1, 2):
+            return error_respuesta(
+                "El intervalo debe durar una o dos horas y hora_inicio debe ser menor que hora_fin",
+                codigo="DURACION_INVALIDA",
+            ), 400
+
+        filtros = {
+            'fecha': fecha,
+            'hora_inicio': hora_inicio,
+            'hora_fin': hora_fin,
+        }
+
+        id_deporte = request.args.get('id_deporte')
+        if id_deporte is not None:
+            if not id_deporte.isdigit() or int(id_deporte) <= 0:
+                return error_respuesta(
+                    "El parámetro 'id_deporte' debe ser un entero positivo",
+                    codigo="ID_DEPORTE_INVALIDO",
+                ), 400
+            filtros['id_deporte'] = int(id_deporte)
+
+        techada = request.args.get('techada')
+        if techada is not None:
+            if techada.lower() not in ('true', 'false'):
+                return error_respuesta(
+                    "El parámetro 'techada' debe ser true o false",
+                    codigo="TECHADA_INVALIDA",
+                ), 400
+            filtros['techada'] = techada.lower() == 'true'
+
+        try:
+            limit = int(request.args.get('_limit', 10))
+            offset = int(request.args.get('_offset', 0))
+        except ValueError:
+            return error_respuesta(
+                "Los parámetros '_limit' y '_offset' deben ser enteros"
+            ), 400
+
+        if not 1 <= limit <= 100 or offset < 0:
+            return error_respuesta(
+                "'_limit' debe estar entre 1 y 100 y '_offset' ser mayor o igual a 0"
+            ), 400
+
+        canchas, total = filtrar_canchas_disponibles(filtros, limit, offset)
+        base_url = request.host_url.rstrip('/') + request.path
+        links = armar_links(base_url, filtros, limit, offset, total)
+
+        return {"canchas": canchas, "_links": links}, 200
+    except Exception as exc:
+        return error_respuesta(
+            "Error interno del servidor",
+            codigo="ERROR_INTERNO",
+            descripcion=str(exc),
+        ), 500
 
 @canchas_bp.route('/canchas', methods=['GET'])
 def listar_canchas():

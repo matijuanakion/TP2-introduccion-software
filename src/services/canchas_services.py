@@ -6,6 +6,8 @@ from src.repositories.canchas_repositories import (
     guardar_cancha,
     actualizar_cancha,
     eliminar_cancha_si_sin_reservas,
+    obtener_canchas_disponibles,
+    contar_canchas_disponibles,
 )
 from src.validators.canchas_validators import (
     validar_actualizacion_cancha,
@@ -16,6 +18,12 @@ from src.validators.canchas_validators import (
 def filtrar_canchas(filtros, limit, offset):
     canchas = obtener_canchas_paginadas(filtros, limit, offset)
     total = contar_canchas(filtros)
+    return canchas, total
+
+
+def filtrar_canchas_disponibles(filtros, limit, offset):
+    canchas = obtener_canchas_disponibles(filtros, limit, offset)
+    total = contar_canchas_disponibles(filtros)
     return canchas, total
 
 
