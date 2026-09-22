@@ -21,34 +21,33 @@ def _condiciones_para(filtros):
 
 def obtener_socios_paginados(filtros, limit, offset):
     conexion, cursor = obtener_cursor()
-    where, parametros = _condiciones_para(filtros)
-
-    cursor.execute(
-        "SELECT * FROM socios" + where +
-        " ORDER BY id ASC LIMIT %s OFFSET %s",
-        parametros + [limit, offset],
-    )
-    filas = cursor.fetchall()
-    conexion.close()
-
-    socios = []
-    for fila in filas:
-        socio = dict(fila)
-        socio['activo'] = bool(socio['activo'])
-        socios.append(socio)
-
-    return socios
+    try:
+        where, parametros = _condiciones_para(filtros)
+        cursor.execute(
+            "SELECT * FROM socios" + where +
+            " ORDER BY id ASC LIMIT %s OFFSET %s",
+            parametros + [limit, offset],
+        )
+        socios = []
+        for fila in cursor.fetchall():
+            socio = dict(fila)
+            socio['activo'] = bool(socio['activo'])
+            socios.append(socio)
+        return socios
+    finally:
+        cursor.close()
+        conexion.close()
 
 
 def contar_socios(filtros):
     conexion, cursor = obtener_cursor()
-    where, parametros = _condiciones_para(filtros)
-
-    cursor.execute("SELECT COUNT(*) AS cantidad FROM socios" + where, parametros)
-    cantidad = cursor.fetchone()['cantidad']
-
-    conexion.close()
-    return cantidad
+    try:
+        where, parametros = _condiciones_para(filtros)
+        cursor.execute("SELECT COUNT(*) AS cantidad FROM socios" + where, parametros)
+        return cursor.fetchone()['cantidad']
+    finally:
+        cursor.close()
+        conexion.close()
 
 
 def obtener_socio_por_id(id_socio):
@@ -71,6 +70,20 @@ def obtener_socio_por_id(id_socio):
     finally:
         cursor.close()
         conexion.close()
+
+
+def obtener_socio_por_id_en_cursor(id_socio, cursor):
+    cursor.execute(
+        "SELECT * FROM socios WHERE id = %s FOR UPDATE",
+        (id_socio,),
+    )
+    fila = cursor.fetchone()
+    if fila is None:
+        return None
+
+    socio = dict(fila)
+    socio['activo'] = bool(socio['activo'])
+    return socio
 
 
 def guardar_socio(nuevo_socio):

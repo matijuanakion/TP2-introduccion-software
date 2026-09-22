@@ -38,7 +38,6 @@ def obtener_socio(id_socio):
         return error_respuesta(
             "Error interno del servidor",
             codigo="ERROR_INTERNO",
-            descripcion=str(exc),
         ), 500
 
 
@@ -63,7 +62,6 @@ def actualizar_socio_por_id(id_socio):
         return error_respuesta(
             "Error interno del servidor",
             codigo="ERROR_INTERNO",
-            descripcion=str(exc),
         ), 500
 
 
@@ -80,7 +78,6 @@ def crear_socio():
         return error_respuesta(
             "Error interno del servidor",
             codigo="ERROR_INTERNO",
-            descripcion=str(exc),
         ), 500
 
 
@@ -111,5 +108,4 @@ def listar_socios():
         return error_respuesta(
             "Error interno del servidor",
             codigo="ERROR_INTERNO",
-            descripcion=str(exc),
         ), 500

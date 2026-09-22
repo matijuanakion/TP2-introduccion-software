@@ -27,67 +27,63 @@ def _condiciones_para(filtros):
 
 def obtener_canchas_paginadas(filtros, limit, offset):
     conexion, cursor = obtener_cursor()
-
-    where, parametros = _condiciones_para(filtros)
-
-    consulta = (
-        "SELECT * FROM canchas"
-        + where
-        + " ORDER BY id ASC LIMIT %s OFFSET %s"
-    )
-    parametros.extend([limit, offset])
-
-    cursor.execute(consulta, parametros)
-    filas = cursor.fetchall()
-
-    canchas = []
-    for fila in filas:
-        cancha_dict = dict(fila)
-        cancha_dict['techada'] = bool(cancha_dict['techada'])
-        cancha_dict['activa'] = bool(cancha_dict['activa'])
-        canchas.append(cancha_dict)
-
-    conexion.close()
-    return canchas
+    try:
+        where, parametros = _condiciones_para(filtros)
+        consulta = (
+            "SELECT * FROM canchas"
+            + where
+            + " ORDER BY id ASC LIMIT %s OFFSET %s"
+        )
+        parametros.extend([limit, offset])
+        cursor.execute(consulta, parametros)
+        filas = cursor.fetchall()
+        canchas = []
+        for fila in filas:
+            cancha_dict = dict(fila)
+            cancha_dict['techada'] = bool(cancha_dict['techada'])
+            cancha_dict['activa'] = bool(cancha_dict['activa'])
+            canchas.append(cancha_dict)
+        return canchas
+    finally:
+        cursor.close()
+        conexion.close()
 
 
 def contar_canchas(filtros):
     conexion, cursor = obtener_cursor()
-
-    where, parametros = _condiciones_para(filtros)
-
-    cursor.execute("SELECT COUNT(*) AS cantidad FROM canchas" + where, parametros)
-    cantidad = cursor.fetchone()['cantidad']
-
-    conexion.close()
-    return cantidad
+    try:
+        where, parametros = _condiciones_para(filtros)
+        cursor.execute("SELECT COUNT(*) AS cantidad FROM canchas" + where, parametros)
+        return cursor.fetchone()['cantidad']
+    finally:
+        cursor.close()
+        conexion.close()
 
 
 def obtener_canchas_para_disponibilidad(filtros):
     conexion, cursor = obtener_cursor()
-
-    filtros_canchas = {
-        campo: filtros[campo]
-        for campo in ('id_deporte', 'techada')
-        if filtros.get(campo) is not None
-    }
-    where, parametros = _condiciones_para(filtros_canchas)
-
-    cursor.execute(
-        "SELECT * FROM canchas" + where + " ORDER BY id ASC",
-        parametros,
-    )
-    filas = cursor.fetchall()
-    conexion.close()
-
-    canchas = []
-    for fila in filas:
-        cancha = dict(fila)
-        cancha['techada'] = bool(cancha['techada'])
-        cancha['activa'] = bool(cancha['activa'])
-        canchas.append(cancha)
-
-    return canchas
+    try:
+        filtros_canchas = {
+            campo: filtros[campo]
+            for campo in ('id_deporte', 'techada')
+            if filtros.get(campo) is not None
+        }
+        where, parametros = _condiciones_para(filtros_canchas)
+        cursor.execute(
+            "SELECT * FROM canchas" + where + " ORDER BY id ASC",
+            parametros,
+        )
+        filas = cursor.fetchall()
+        canchas = []
+        for fila in filas:
+            cancha = dict(fila)
+            cancha['techada'] = bool(cancha['techada'])
+            cancha['activa'] = bool(cancha['activa'])
+            canchas.append(cancha)
+        return canchas
+    finally:
+        cursor.close()
+        conexion.close()
 
 
 def obtener_bloqueos_por_fecha(fecha):
@@ -106,25 +102,23 @@ def obtener_bloqueos_por_fecha(fecha):
 
 def guardar_cancha(nueva_cancha):
     conexion, cursor = obtener_cursor()
-
-    cursor.execute("""
-        INSERT INTO canchas (nombre, id_deporte, precio_hora, techada, activa)
-        VALUES (%s, %s, %s, %s, %s)
-    """, (
-        nueva_cancha['nombre'],
-        nueva_cancha['id_deporte'],
-        nueva_cancha['precio_hora'],
-        nueva_cancha['techada'],
-        nueva_cancha['activa']
-    ))
-
-    nuevo_id = cursor.lastrowid
-    nueva_cancha['id'] = nuevo_id
-
-    conexion.commit()
-    conexion.close()
-
-    return nueva_cancha
+    try:
+        cursor.execute("""
+            INSERT INTO canchas (nombre, id_deporte, precio_hora, techada, activa)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (
+            nueva_cancha['nombre'],
+            nueva_cancha['id_deporte'],
+            nueva_cancha['precio_hora'],
+            nueva_cancha['techada'],
+            nueva_cancha['activa']
+        ))
+        nueva_cancha['id'] = cursor.lastrowid
+        conexion.commit()
+        return nueva_cancha
+    finally:
+        cursor.close()
+        conexion.close()
 
 
 def obtener_cancha_por_id(id_cancha):
@@ -150,6 +144,21 @@ def obtener_cancha_por_id(id_cancha):
     finally:
         cursor.close()
         conexion.close()
+
+
+def obtener_cancha_por_id_en_cursor(id_cancha, cursor):
+    cursor.execute(
+        "SELECT * FROM canchas WHERE id = %s FOR UPDATE",
+        (id_cancha,),
+    )
+    fila = cursor.fetchone()
+    if fila is None:
+        return None
+
+    cancha = dict(fila)
+    cancha['techada'] = bool(cancha['techada'])
+    cancha['activa'] = bool(cancha['activa'])
+    return cancha
 
 
 def actualizar_cancha(id_cancha, cancha):
@@ -190,6 +199,14 @@ def contar_reservas_de_cancha(id_cancha):
         conexion.close()
 
 
+def contar_reservas_de_cancha_en_cursor(id_cancha, cursor):
+    cursor.execute(
+        "SELECT COUNT(*) AS cantidad FROM reservas WHERE id_cancha = %s",
+        (id_cancha,),
+    )
+    return cursor.fetchone()['cantidad']
+
+
 def eliminar_cancha(id_cancha):
     conexion, cursor = obtener_cursor()
 
@@ -199,3 +216,8 @@ def eliminar_cancha(id_cancha):
     finally:
         cursor.close()
         conexion.close()
+
+
+def eliminar_cancha_en_transaccion(id_cancha, conexion, cursor):
+    cursor.execute("DELETE FROM canchas WHERE id = %s", (id_cancha,))
+    conexion.commit()

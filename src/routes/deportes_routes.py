@@ -19,5 +19,4 @@ def obtener_deportes():
         return error_respuesta(
             "Error interno del servidor",
             codigo="ERROR_INTERNO",
-            descripcion=str(exc),
         ), 500

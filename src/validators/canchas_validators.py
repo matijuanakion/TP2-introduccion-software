@@ -14,10 +14,10 @@ def validar_filtros_canchas(parametros):
 
     id_deporte = parametros.get('id_deporte')
     if id_deporte is not None:
-        if not id_deporte.isdigit():
+        if not id_deporte.isascii() or not id_deporte.isdecimal() or int(id_deporte) <= 0:
             errores.append(
                 crear_error(
-                    "El parámetro 'id_deporte' debe ser un entero",
+                    "El parámetro 'id_deporte' debe ser un entero positivo",
                     codigo='ID_DEPORTE_INVALIDO',
                     incluir_status=True,
                 )

@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from src.db import obtener_cursor
 from src.errores import error_respuesta
 from src.repositories.canchas_repositories import (
     obtener_cancha_por_id,
@@ -7,8 +8,9 @@ from src.repositories.canchas_repositories import (
     contar_canchas,
     guardar_cancha,
     actualizar_cancha,
-    eliminar_cancha,
-    contar_reservas_de_cancha,
+    obtener_cancha_por_id_en_cursor,
+    contar_reservas_de_cancha_en_cursor,
+    eliminar_cancha_en_transaccion,
     obtener_canchas_para_disponibilidad,
     obtener_bloqueos_por_fecha,
 )
@@ -140,17 +142,28 @@ def procesar_actualizacion_cancha(id_cancha, datos):
 
 
 def procesar_eliminacion_cancha(id_cancha):
-    if obtener_cancha_por_id(id_cancha) is None:
-        return error_respuesta(
-            f"No existe una cancha con id {id_cancha}",
-            codigo="CANCHA_INEXISTENTE",
-        ), 404
+    conexion, cursor = obtener_cursor()
+    try:
+        cancha = obtener_cancha_por_id_en_cursor(id_cancha, cursor)
+        if cancha is None:
+            conexion.rollback()
+            return error_respuesta(
+                f"No existe una cancha con id {id_cancha}",
+                codigo="CANCHA_INEXISTENTE",
+            ), 404
 
-    if contar_reservas_de_cancha(id_cancha) > 0:
-        return error_respuesta(
-            f"No se puede eliminar la cancha con id {id_cancha} porque tiene reservas asociadas",
-            codigo="CANCHA_CON_RESERVAS",
-        ), 409
+        if contar_reservas_de_cancha_en_cursor(id_cancha, cursor) > 0:
+            conexion.rollback()
+            return error_respuesta(
+                f"No se puede eliminar la cancha con id {id_cancha} porque tiene reservas asociadas",
+                codigo="CANCHA_CON_RESERVAS",
+            ), 409
 
-    eliminar_cancha(id_cancha)
-    return "", 204
+        eliminar_cancha_en_transaccion(id_cancha, conexion, cursor)
+        return "", 204
+    except Exception:
+        conexion.rollback()
+        raise
+    finally:
+        cursor.close()
+        conexion.close()

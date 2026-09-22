@@ -1,16 +1,17 @@
 from datetime import datetime, timedelta, timezone
 
+from src.db import obtener_cursor
 from src.errores import error_respuesta
 from src.repositories.reservas_repositories import (
     contar_reservas,
-    guardar_reserva,
     obtener_reservas_paginadas,
     obtener_reserva_por_id,
-    obtener_reservas_relacionadas,
+    obtener_reservas_relacionadas_en_cursor,
+    guardar_reserva_en_transaccion,
     actualizar_estado_reserva,
 )
-from src.repositories.canchas_repositories import obtener_cancha_por_id
-from src.repositories.socios_repositories import obtener_socio_por_id
+from src.repositories.canchas_repositories import obtener_cancha_por_id_en_cursor
+from src.repositories.socios_repositories import obtener_socio_por_id_en_cursor
 from src.validators.reservas_validators import validar_nueva_reserva
 
 
@@ -69,46 +70,59 @@ def procesar_nueva_reserva(datos):
             ),
         )
 
-    socio = obtener_socio_por_id(nueva_reserva['id_socio'])
-    if socio is None:
-        return error_respuesta(
-            'No existe un socio con ese id', codigo='SOCIO_INEXISTENTE'
-        ), 404
-    if not socio['activo']:
-        return error_respuesta(
-            'El socio no está activo', codigo='SOCIO_INACTIVO'
-        ), 409
+    conexion, cursor = obtener_cursor()
+    try:
+        socio = obtener_socio_por_id_en_cursor(nueva_reserva['id_socio'], cursor)
+        if socio is None:
+            conexion.rollback()
+            return error_respuesta(
+                'No existe un socio con ese id', codigo='SOCIO_INEXISTENTE'
+            ), 404
+        if not socio['activo']:
+            conexion.rollback()
+            return error_respuesta(
+                'El socio no está activo', codigo='SOCIO_INACTIVO'
+            ), 409
 
-    cancha = obtener_cancha_por_id(nueva_reserva['id_cancha'])
-    if cancha is None:
-        return error_respuesta(
-            'No existe una cancha con ese id', codigo='CANCHA_INEXISTENTE'
-        ), 404
-    if not cancha['activa']:
-        return error_respuesta(
-            'La cancha no está activa', codigo='CANCHA_INACTIVA'
-        ), 409
+        cancha = obtener_cancha_por_id_en_cursor(nueva_reserva['id_cancha'], cursor)
+        if cancha is None:
+            conexion.rollback()
+            return error_respuesta(
+                'No existe una cancha con ese id', codigo='CANCHA_INEXISTENTE'
+            ), 404
+        if not cancha['activa']:
+            conexion.rollback()
+            return error_respuesta(
+                'La cancha no está activa', codigo='CANCHA_INACTIVA'
+            ), 409
 
-    reservas_relacionadas = obtener_reservas_relacionadas(
-        nueva_reserva['id_socio'], nueva_reserva['id_cancha']
-    )
-    if any(
-        reserva['estado'] == 'confirmada'
-        and _fecha_hora(reserva['fecha_hora_inicio']) < _fecha_hora(nueva_reserva['fecha_hora_fin'])
-        and _fecha_hora(reserva['fecha_hora_fin']) > _fecha_hora(nueva_reserva['fecha_hora_inicio'])
-        for reserva in reservas_relacionadas
-    ):
-        return error_respuesta(
-            'La reserva se superpone con otra reserva del socio o de la cancha',
-            codigo='RESERVA_SUPERPUESTA',
-        ), 409
+        reservas_relacionadas = obtener_reservas_relacionadas_en_cursor(
+            nueva_reserva['id_socio'], nueva_reserva['id_cancha'], cursor
+        )
+        if any(
+            reserva['estado'] == 'confirmada'
+            and _fecha_hora(reserva['fecha_hora_inicio']) < _fecha_hora(nueva_reserva['fecha_hora_fin'])
+            and _fecha_hora(reserva['fecha_hora_fin']) > _fecha_hora(nueva_reserva['fecha_hora_inicio'])
+            for reserva in reservas_relacionadas
+        ):
+            conexion.rollback()
+            return error_respuesta(
+                'La reserva se superpone con otra reserva del socio o de la cancha',
+                codigo='RESERVA_SUPERPUESTA',
+            ), 409
 
-    nueva_reserva['estado'] = 'confirmada'
-    nueva_reserva['precio_hora'] = cancha['precio_hora']
-    nueva_reserva['precio_total'] = int(
-        cancha['precio_hora'] * nueva_reserva.pop('duracion_horas')
-    )
-    resultado = guardar_reserva(nueva_reserva)
+        nueva_reserva['estado'] = 'confirmada'
+        nueva_reserva['precio_hora'] = cancha['precio_hora']
+        nueva_reserva['precio_total'] = int(
+            cancha['precio_hora'] * nueva_reserva.pop('duracion_horas')
+        )
+        resultado = guardar_reserva_en_transaccion(nueva_reserva, conexion, cursor)
+    except Exception:
+        conexion.rollback()
+        raise
+    finally:
+        cursor.close()
+        conexion.close()
 
     return {'mensaje': 'Reserva creada', 'reserva': resultado}, 201
 

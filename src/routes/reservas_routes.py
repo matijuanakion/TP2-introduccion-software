@@ -36,7 +36,6 @@ def crear_reserva():
         return error_respuesta(
             "Error interno del servidor",
             codigo="ERROR_INTERNO",
-            descripcion=str(exc),
         ), 500
 
 
@@ -75,7 +74,6 @@ def listar_reservas():
         return error_respuesta(
             "Error interno del servidor",
             codigo="ERROR_INTERNO",
-            descripcion=str(exc),
         ), 500
 
 
@@ -95,7 +93,6 @@ def obtener_reserva(id_reserva):
         return error_respuesta(
             "Error interno del servidor",
             codigo="ERROR_INTERNO",
-            descripcion=str(exc),
         ), 500
 
 
@@ -123,5 +120,4 @@ def actualizar_estado(id_reserva):
         return error_respuesta(
             "Error interno del servidor",
             codigo="ERROR_INTERNO",
-            descripcion=str(exc),
         ), 500

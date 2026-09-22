@@ -59,7 +59,6 @@ def listar_canchas_disponibles():
         return error_respuesta(
             "Error interno del servidor",
             codigo="ERROR_INTERNO",
-            descripcion=str(exc),
         ), 500
 
 @canchas_bp.route('/canchas', methods=['GET'])
@@ -98,7 +97,6 @@ def listar_canchas():
         return error_respuesta(
             "Error interno del servidor",
             codigo="ERROR_INTERNO",
-            descripcion=str(exc),
         ), 500
 
 
@@ -115,7 +113,6 @@ def crear_cancha():
         return error_respuesta(
             "Error interno del servidor",
             codigo="ERROR_INTERNO",
-            descripcion=str(exc),
         ), 500
 
 
@@ -138,7 +135,6 @@ def obtener_cancha(id_cancha):
         return error_respuesta(
             "Error interno del servidor",
             codigo="ERROR_INTERNO",
-            descripcion=str(exc),
         ), 500
 
 
@@ -163,7 +159,6 @@ def actualizar_cancha_por_id(id_cancha):
         return error_respuesta(
             "Error interno del servidor",
             codigo="ERROR_INTERNO",
-            descripcion=str(exc),
         ), 500
 
 
@@ -184,5 +179,4 @@ def eliminar_cancha_por_id(id_cancha):
         return error_respuesta(
             "Error interno del servidor",
             codigo="ERROR_INTERNO",
-            descripcion=str(exc),
         ), 500
