@@ -1,8 +1,150 @@
+from datetime import datetime
+
 from src.errores import crear_error
 from src.repositories.deportes_repositories import existe_deporte
 
 CAMPOS_OBLIGATORIOS = ['nombre', 'id_deporte', 'precio_hora']
 CAMPOS_EDITABLES = {'nombre', 'precio_hora', 'techada', 'activa'}
+
+
+def validar_filtros_canchas(parametros):
+    errores = []
+    filtros = {}
+
+    id_deporte = parametros.get('id_deporte')
+    if id_deporte is not None:
+        if not id_deporte.isdigit():
+            errores.append(
+                crear_error(
+                    "El parámetro 'id_deporte' debe ser un entero",
+                    codigo='ID_DEPORTE_INVALIDO',
+                    incluir_status=True,
+                )
+            )
+        else:
+            filtros['id_deporte'] = int(id_deporte)
+
+    if parametros.get('nombre') is not None:
+        filtros['nombre'] = parametros['nombre']
+
+    for campo in ('techada', 'activa'):
+        valor = parametros.get(campo)
+        if valor is None:
+            continue
+        if valor.lower() not in ('true', 'false'):
+            errores.append(
+                crear_error(
+                    f"El parámetro '{campo}' debe ser true o false",
+                    codigo=f'{campo.upper()}_INVALIDA',
+                    incluir_status=True,
+                )
+            )
+        else:
+            filtros[campo] = valor.lower() == 'true'
+
+    if errores:
+        return errores, None
+    return None, filtros
+
+
+def validar_filtros_canchas_disponibles(parametros):
+    errores = []
+    filtros = {}
+
+    for campo in ('fecha', 'hora_inicio', 'hora_fin'):
+        if not parametros.get(campo):
+            errores.append(
+                crear_error(
+                    f"El parámetro '{campo}' es obligatorio",
+                    codigo='PARAMETRO_OBLIGATORIO',
+                    incluir_status=True,
+                )
+            )
+
+    fecha = parametros.get('fecha')
+    if fecha:
+        try:
+            datetime.strptime(fecha, '%Y-%m-%d')
+        except ValueError:
+            errores.append(
+                crear_error(
+                    "El parámetro 'fecha' debe tener formato YYYY-MM-DD",
+                    codigo='FECHA_INVALIDA',
+                    incluir_status=True,
+                )
+            )
+
+    horas = {}
+    for campo in ('hora_inicio', 'hora_fin'):
+        valor = parametros.get(campo)
+        if not valor:
+            continue
+        try:
+            horas[campo] = datetime.strptime(valor, '%H:%M:%S')
+        except ValueError:
+            errores.append(
+                crear_error(
+                    "Los parámetros 'hora_inicio' y 'hora_fin' deben tener formato HH:00:00",
+                    codigo='HORARIO_INVALIDO',
+                    incluir_status=True,
+                )
+            )
+            continue
+        if len(valor) != 8 or valor[2:] != ':00:00':
+            errores.append(
+                crear_error(
+                    "Los horarios deben comenzar exactamente en una hora",
+                    codigo='HORARIO_INVALIDO',
+                    incluir_status=True,
+                )
+            )
+
+    if len(horas) == 2:
+        duracion = (horas['hora_fin'] - horas['hora_inicio']).seconds // 3600
+        if horas['hora_fin'] <= horas['hora_inicio'] or duracion not in (1, 2):
+            errores.append(
+                crear_error(
+                    'El intervalo debe durar una o dos horas y hora_inicio debe ser menor que hora_fin',
+                    codigo='DURACION_INVALIDA',
+                    incluir_status=True,
+                )
+            )
+
+    id_deporte = parametros.get('id_deporte')
+    if id_deporte is not None:
+        if not id_deporte.isdigit() or int(id_deporte) <= 0:
+            errores.append(
+                crear_error(
+                    "El parámetro 'id_deporte' debe ser un entero positivo",
+                    codigo='ID_DEPORTE_INVALIDO',
+                    incluir_status=True,
+                )
+            )
+        else:
+            filtros['id_deporte'] = int(id_deporte)
+
+    techada = parametros.get('techada')
+    if techada is not None:
+        if techada.lower() not in ('true', 'false'):
+            errores.append(
+                crear_error(
+                    "El parámetro 'techada' debe ser true o false",
+                    codigo='TECHADA_INVALIDA',
+                    incluir_status=True,
+                )
+            )
+        else:
+            filtros['techada'] = techada.lower() == 'true'
+
+    if errores:
+        return errores, None
+
+    filtros.update({
+        'fecha': fecha,
+        'hora_inicio': parametros['hora_inicio'],
+        'hora_fin': parametros['hora_fin'],
+    })
+    return None, filtros
 
 
 def validar_campos_obligatorios(datos):

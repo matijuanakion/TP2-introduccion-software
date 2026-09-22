@@ -11,9 +11,11 @@ from src.utils import (
     armar_links,
     obtener_datos_json,
     obtener_paginacion,
+    respuesta_validacion,
     validar_id,
     validar_parametros,
 )
+from src.validators.socios_validators import validar_filtros_socios
 
 socios_bp = Blueprint('socios_bp', __name__)
 
@@ -68,10 +70,9 @@ def actualizar_socio_por_id(id_socio):
 @socios_bp.route('/socios', methods=['POST'])
 def crear_socio():
     try:
-        datos = request.get_json()
-
-        if not datos:
-            return error_respuesta("El cuerpo de la solicitud no puede estar vacío"), 400
+        datos, error, status_code = obtener_datos_json()
+        if error:
+            return error, status_code
 
         respuesta, status_code = procesar_nuevo_socio(datos)
         return respuesta, status_code
@@ -90,19 +91,9 @@ def listar_socios():
         if error:
             return error
 
-        filtros = {}
-
-        nombre = request.args.get('nombre')
-        if nombre is not None:
-            filtros['nombre'] = nombre
-
-        activo = request.args.get('activo')
-        if activo is not None:
-            if activo.lower() not in ('true', 'false'):
-                return error_respuesta(
-                    "El parámetro 'activo' debe ser true o false"
-                ), 400
-            filtros['activo'] = activo.lower() == 'true'
+        errores, filtros = validar_filtros_socios(request.args)
+        if errores:
+            return respuesta_validacion(errores)
 
         limit, offset, error, status_code = obtener_paginacion()
         if error:

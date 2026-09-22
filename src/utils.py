@@ -3,6 +3,23 @@ from flask import request
 from src.errores import error_respuesta
 
 
+def respuesta_validacion(errores):
+    return (
+        {
+            'errors': [
+                {
+                    'code': error['code'],
+                    'message': error['message'],
+                    'level': error.get('level', 'error'),
+                    'description': error.get('description', error['message']),
+                }
+                for error in errores
+            ]
+        },
+        max((error.get('status', 400) for error in errores), default=400),
+    )
+
+
 def armar_href(base_url, filtros, limit, offset):
     parametros = []
     for campo, valor in filtros.items():

@@ -7,6 +7,31 @@ EMAIL_VALIDO = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
 CAMPOS_EDITABLES = {'nombre', 'email', 'activo'}
 
 
+def validar_filtros_socios(parametros):
+    errores = []
+    filtros = {}
+
+    if parametros.get('nombre') is not None:
+        filtros['nombre'] = parametros['nombre']
+
+    activo = parametros.get('activo')
+    if activo is not None:
+        if activo.lower() not in ('true', 'false'):
+            errores.append(
+                crear_error(
+                    "El parámetro 'activo' debe ser true o false",
+                    codigo='ACTIVO_INVALIDO',
+                    incluir_status=True,
+                )
+            )
+        else:
+            filtros['activo'] = activo.lower() == 'true'
+
+    if errores:
+        return errores, None
+    return None, filtros
+
+
 def validar_nuevo_socio(datos):
     errores = []
 

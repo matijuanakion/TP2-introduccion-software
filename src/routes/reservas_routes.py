@@ -6,6 +6,7 @@ from src.utils import (
     armar_links,
     obtener_datos_json,
     obtener_paginacion,
+    respuesta_validacion,
     validar_parametros,
 )
 from src.validators.reservas_validators import validar_filtros_reservas
@@ -47,17 +48,7 @@ def listar_reservas():
 
         errores, filtros = validar_filtros_reservas(request.args)
         if errores:
-            return {
-                'errors': [
-                    {
-                        'code': error['code'],
-                        'message': error['message'],
-                        'level': error.get('level', 'error'),
-                        'description': error.get('description', error['message']),
-                    }
-                    for error in errores
-                ]
-            }, max(error.get('status', 400) for error in errores)
+            return respuesta_validacion(errores)
 
         limit, offset, error, status_code = obtener_paginacion()
         if error:
