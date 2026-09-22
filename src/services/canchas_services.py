@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from src.errores import error_respuesta
 from src.repositories.canchas_repositories import (
     obtener_cancha_por_id,
@@ -5,10 +7,12 @@ from src.repositories.canchas_repositories import (
     contar_canchas,
     guardar_cancha,
     actualizar_cancha,
-    eliminar_cancha_si_sin_reservas,
-    obtener_canchas_disponibles,
-    contar_canchas_disponibles,
+    eliminar_cancha,
+    contar_reservas_de_cancha,
+    obtener_canchas_para_disponibilidad,
+    obtener_bloqueos_por_fecha,
 )
+from src.repositories.reservas_repositories import obtener_reservas_por_fecha
 from src.validators.canchas_validators import (
     validar_actualizacion_cancha,
     validar_nueva_cancha,
@@ -22,9 +26,43 @@ def filtrar_canchas(filtros, limit, offset):
 
 
 def filtrar_canchas_disponibles(filtros, limit, offset):
-    canchas = obtener_canchas_disponibles(filtros, limit, offset)
-    total = contar_canchas_disponibles(filtros)
-    return canchas, total
+    canchas = obtener_canchas_para_disponibilidad(filtros)
+    reservas = obtener_reservas_por_fecha(filtros['fecha'])
+    bloqueos = obtener_bloqueos_por_fecha(filtros['fecha'])
+    inicio = f"{filtros['fecha']} {filtros['hora_inicio']}"
+    fin = f"{filtros['fecha']} {filtros['hora_fin']}"
+    inicio = datetime.fromisoformat(inicio)
+    fin = datetime.fromisoformat(fin)
+
+    def se_superpone(intervalo_inicio, intervalo_fin):
+        reserva_inicio = datetime.fromisoformat(str(intervalo_inicio).replace(' ', 'T'))
+        reserva_fin = datetime.fromisoformat(str(intervalo_fin).replace(' ', 'T'))
+        return reserva_inicio < fin and reserva_fin > inicio
+
+    canchas_disponibles = []
+    for cancha in canchas:
+        if not cancha['activa']:
+            continue
+
+        tiene_reserva = any(
+            reserva['estado'] == 'confirmada'
+            and reserva['id_cancha'] == cancha['id']
+            and se_superpone(
+                str(reserva['fecha_hora_inicio']),
+                str(reserva['fecha_hora_fin']),
+            )
+            for reserva in reservas
+        )
+        tiene_bloqueo = any(
+            bloqueo['id_cancha'] == cancha['id']
+            and str(bloqueo['hora_inicio']) < filtros['hora_fin']
+            and str(bloqueo['hora_fin']) > filtros['hora_inicio']
+            for bloqueo in bloqueos
+        )
+        if not tiene_reserva and not tiene_bloqueo:
+            canchas_disponibles.append(cancha)
+
+    return canchas_disponibles[offset:offset + limit], len(canchas_disponibles)
 
 
 def procesar_nueva_cancha(datos):
@@ -64,6 +102,13 @@ def consultar_cancha(id_cancha):
 
 
 def procesar_actualizacion_cancha(id_cancha, datos):
+    campos_no_editables = set(datos) - {'nombre', 'precio_hora', 'techada', 'activa'}
+    if not datos or campos_no_editables:
+        return error_respuesta(
+            'Debe indicarse al menos un campo editable y no incluir campos desconocidos',
+            codigo='CUERPO_INVALIDO',
+        ), 400
+
     cancha_actual = obtener_cancha_por_id(id_cancha)
 
     if cancha_actual is None:
@@ -95,18 +140,17 @@ def procesar_actualizacion_cancha(id_cancha, datos):
 
 
 def procesar_eliminacion_cancha(id_cancha):
-    resultado = eliminar_cancha_si_sin_reservas(id_cancha)
-
-    if resultado == 'inexistente':
+    if obtener_cancha_por_id(id_cancha) is None:
         return error_respuesta(
             f"No existe una cancha con id {id_cancha}",
             codigo="CANCHA_INEXISTENTE",
         ), 404
 
-    if resultado == 'con_reservas':
+    if contar_reservas_de_cancha(id_cancha) > 0:
         return error_respuesta(
             f"No se puede eliminar la cancha con id {id_cancha} porque tiene reservas asociadas",
             codigo="CANCHA_CON_RESERVAS",
         ), 409
 
+    eliminar_cancha(id_cancha)
     return "", 204

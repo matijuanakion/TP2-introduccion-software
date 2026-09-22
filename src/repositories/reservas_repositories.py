@@ -58,84 +58,89 @@ def contar_reservas(filtros):
         conexion.close()
 
 
-def guardar_reserva(nueva_reserva):
+def obtener_reservas_por_fecha(fecha):
     conexion, cursor = obtener_cursor()
 
     try:
         cursor.execute(
-            "SELECT activo FROM socios WHERE id = %s FOR UPDATE",
-            (nueva_reserva['id_socio'],),
+            "SELECT * FROM reservas WHERE LEFT(fecha_hora_inicio, 10) = %s",
+            (fecha,),
         )
-        socio = cursor.fetchone()
-        if socio is None:
-            conexion.rollback()
-            return 'socio_inexistente'
-        if not socio['activo']:
-            conexion.rollback()
-            return 'socio_inactivo'
+        return [dict(fila) for fila in cursor.fetchall()]
+    finally:
+        cursor.close()
+        conexion.close()
 
+
+def obtener_reservas_relacionadas(id_socio, id_cancha):
+    conexion, cursor = obtener_cursor()
+
+    try:
         cursor.execute(
-            "SELECT activa, precio_hora FROM canchas WHERE id = %s FOR UPDATE",
-            (nueva_reserva['id_cancha'],),
+            "SELECT * FROM reservas WHERE id_socio = %s OR id_cancha = %s",
+            (id_socio, id_cancha),
         )
-        cancha = cursor.fetchone()
-        if cancha is None:
-            conexion.rollback()
-            return 'cancha_inexistente'
-        if not cancha['activa']:
-            conexion.rollback()
-            return 'cancha_inactiva'
+        return [dict(fila) for fila in cursor.fetchall()]
+    finally:
+        cursor.close()
+        conexion.close()
 
-        cursor.execute(
-            """
-            SELECT 1
-            FROM reservas
-            WHERE estado NOT IN ('cancelada', 'finalizada')
-              AND (id_socio = %s OR id_cancha = %s)
-              AND fecha_hora_inicio < %s
-              AND fecha_hora_fin > %s
-            LIMIT 1
-            """,
-            (
-                nueva_reserva['id_socio'],
-                nueva_reserva['id_cancha'],
-                nueva_reserva['fecha_hora_fin'],
-                nueva_reserva['fecha_hora_inicio'],
-            ),
-        )
-        if cursor.fetchone() is not None:
-            conexion.rollback()
-            return 'superposicion'
 
-        precio_hora = cancha['precio_hora']
-        precio_total = int(precio_hora * nueva_reserva['duracion_horas'])
+def obtener_reserva_por_id(id_reserva):
+    conexion, cursor = obtener_cursor()
+
+    try:
+        cursor.execute("SELECT * FROM reservas WHERE id = %s", (id_reserva,))
+        fila = cursor.fetchone()
+        return dict(fila) if fila is not None else None
+    finally:
+        cursor.close()
+        conexion.close()
+
+
+def guardar_reserva(nueva_reserva):
+    conexion, cursor = obtener_cursor()
+
+    try:
         cursor.execute(
             """
             INSERT INTO reservas (
                 id_socio, id_cancha, fecha_hora_inicio, fecha_hora_fin,
                 estado, precio_hora, precio_total
             )
-            VALUES (%s, %s, %s, %s, 'confirmada', %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             """,
             (
                 nueva_reserva['id_socio'],
                 nueva_reserva['id_cancha'],
                 nueva_reserva['fecha_hora_inicio'],
                 nueva_reserva['fecha_hora_fin'],
-                precio_hora,
-                precio_total,
+                nueva_reserva['estado'],
+                nueva_reserva['precio_hora'],
+                nueva_reserva['precio_total'],
             ),
         )
-        nueva_reserva['id'] = cursor.lastrowid
-        nueva_reserva['estado'] = 'confirmada'
-        nueva_reserva['precio_hora'] = precio_hora
-        nueva_reserva['precio_total'] = precio_total
-        nueva_reserva.pop('duracion_horas')
+        reserva_guardada = dict(nueva_reserva)
+        reserva_guardada['id'] = cursor.lastrowid
         conexion.commit()
-        return nueva_reserva
+        return reserva_guardada
     except Exception:
         conexion.rollback()
         raise
+    finally:
+        cursor.close()
+        conexion.close()
+
+def actualizar_estado_reserva(id_reserva, estado):
+    conexion, cursor = obtener_cursor()
+
+    try:
+        cursor.execute(
+            "UPDATE reservas SET estado = %s WHERE id = %s",
+            (estado, id_reserva),
+        )
+        conexion.commit()
+        return cursor.rowcount > 0
     finally:
         cursor.close()
         conexion.close()

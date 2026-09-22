@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
 from src.errores import crear_error
@@ -14,10 +14,75 @@ CAMPOS_OBLIGATORIOS = (
 PATRON_FECHA_HORA = re.compile(
     r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}-03:00$'
 )
+ZONA_CLUB = timezone(timedelta(hours=-3))
+HORA_APERTURA = 8
+HORA_CIERRE = 23
+MIN_DURACION_HORAS = 1
+MAX_DURACION_HORAS = 3
+
+
+def validar_intervalo(fecha, hora_inicio, hora_fin):
+    errores = []
+    inicio = datetime.strptime(
+        f'{fecha}T{hora_inicio}-03:00',
+        '%Y-%m-%dT%H:%M:%S-03:00',
+    ).replace(tzinfo=ZONA_CLUB)
+    fin = datetime.strptime(
+        f'{fecha}T{hora_fin}-03:00',
+        '%Y-%m-%dT%H:%M:%S-03:00',
+    ).replace(tzinfo=ZONA_CLUB)
+    duracion = (fin - inicio).total_seconds() / 3600
+    ahora = datetime.now(ZONA_CLUB)
+
+    if inicio <= ahora:
+        errores.append(
+            crear_error(
+                "El inicio de la reserva debe ser posterior al momento actual",
+                codigo='INICIO_NO_FUTURO',
+                incluir_status=True,
+            )
+        )
+
+    if inicio >= fin:
+        errores.append(
+            crear_error(
+                "'fecha_hora_fin' debe ser posterior a 'fecha_hora_inicio'",
+                codigo='INTERVALO_INVALIDO',
+                incluir_status=True,
+            )
+        )
+    elif duracion not in range(MIN_DURACION_HORAS, MAX_DURACION_HORAS + 1):
+        errores.append(
+            crear_error(
+                'El intervalo debe durar entre una y tres horas completas',
+                codigo='DURACION_INVALIDA',
+                incluir_status=True,
+            )
+        )
+
+    if inicio.hour < HORA_APERTURA or fin.hour > HORA_CIERRE:
+        errores.append(
+            crear_error(
+                'El intervalo debe estar dentro del horario de atención de 08:00 a 23:00',
+                codigo='HORARIO_INVALIDO',
+                incluir_status=True,
+            )
+        )
+
+    return errores
 
 
 def validar_nueva_reserva(datos):
     errores = []
+    campos_desconocidos = set(datos) - set(CAMPOS_OBLIGATORIOS)
+    if campos_desconocidos:
+        errores.append(
+            crear_error(
+                f"Campos desconocidos: {', '.join(sorted(campos_desconocidos))}",
+                codigo='CAMPO_DESCONOCIDO',
+                incluir_status=True,
+            )
+        )
     faltantes = [campo for campo in CAMPOS_OBLIGATORIOS if campo not in datos]
 
     for campo in faltantes:
@@ -67,6 +132,14 @@ def validar_nueva_reserva(datos):
                 valor,
                 '%Y-%m-%dT%H:%M:%S.%f-03:00',
             )
+            if fechas[campo].minute != 0 or fechas[campo].second != 0 or fechas[campo].microsecond != 0:
+                errores.append(
+                    crear_error(
+                        f"El campo '{campo}' debe comenzar o terminar en una hora exacta",
+                        codigo='HORARIO_INVALIDO',
+                        incluir_status=True,
+                    )
+                )
         except ValueError:
             errores.append(
                 crear_error(
@@ -76,12 +149,12 @@ def validar_nueva_reserva(datos):
                 )
             )
 
-    if len(fechas) == 2 and fechas['fecha_hora_fin'] <= fechas['fecha_hora_inicio']:
-        errores.append(
-            crear_error(
-                "'fecha_hora_fin' debe ser posterior a 'fecha_hora_inicio'",
-                codigo='INTERVALO_INVALIDO',
-                incluir_status=True,
+    if len(fechas) == 2:
+        errores.extend(
+            validar_intervalo(
+                fechas['fecha_hora_inicio'].strftime('%Y-%m-%d'),
+                fechas['fecha_hora_inicio'].strftime('%H:%M:%S'),
+                fechas['fecha_hora_fin'].strftime('%H:%M:%S'),
             )
         )
 
@@ -98,6 +171,28 @@ def validar_nueva_reserva(datos):
         'fecha_hora_fin': datos['fecha_hora_fin'],
         'duracion_horas': duracion_horas,
     }
+
+
+def validar_estado_reserva(datos):
+    if set(datos) != {'estado'}:
+        return [
+            crear_error(
+                "El cuerpo debe contener únicamente el campo 'estado'",
+                codigo='CUERPO_INVALIDO',
+                incluir_status=True,
+            )
+        ], None
+
+    if datos['estado'] not in ('confirmada', 'cancelada', 'finalizada'):
+        return [
+            crear_error(
+                "El campo 'estado' debe ser confirmada, cancelada o finalizada",
+                codigo='ESTADO_INVALIDO',
+                incluir_status=True,
+            )
+        ], None
+
+    return None, datos['estado']
 
 
 def validar_filtros_reservas(parametros):

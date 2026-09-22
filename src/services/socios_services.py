@@ -60,6 +60,13 @@ def procesar_nuevo_socio(datos):
 
 
 def procesar_actualizacion_socio(id_socio, datos):
+    campos_no_editables = set(datos) - {'nombre', 'email', 'activo'}
+    if not datos or campos_no_editables:
+        return error_respuesta(
+            'Debe indicarse al menos un campo editable y no incluir campos desconocidos',
+            codigo='CUERPO_INVALIDO',
+        ), 400
+
     socio_actual = obtener_socio_por_id(id_socio)
 
     if socio_actual is None:

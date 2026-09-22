@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from src.errores import crear_error
+from src.validators.reservas_validators import validar_intervalo
 from src.repositories.deportes_repositories import existe_deporte
 
 CAMPOS_OBLIGATORIOS = ['nombre', 'id_deporte', 'precio_hora']
@@ -62,9 +63,11 @@ def validar_filtros_canchas_disponibles(parametros):
             )
 
     fecha = parametros.get('fecha')
+    fecha_valida = False
     if fecha:
         try:
             datetime.strptime(fecha, '%Y-%m-%d')
+            fecha_valida = True
         except ValueError:
             errores.append(
                 crear_error(
@@ -99,16 +102,14 @@ def validar_filtros_canchas_disponibles(parametros):
                 )
             )
 
-    if len(horas) == 2:
-        duracion = (horas['hora_fin'] - horas['hora_inicio']).seconds // 3600
-        if horas['hora_fin'] <= horas['hora_inicio'] or duracion not in (1, 2):
-            errores.append(
-                crear_error(
-                    'El intervalo debe durar una o dos horas y hora_inicio debe ser menor que hora_fin',
-                    codigo='DURACION_INVALIDA',
-                    incluir_status=True,
-                )
+    if fecha_valida and len(horas) == 2:
+        errores.extend(
+            validar_intervalo(
+                fecha,
+                horas['hora_inicio'].strftime('%H:%M:%S'),
+                horas['hora_fin'].strftime('%H:%M:%S'),
             )
+        )
 
     id_deporte = parametros.get('id_deporte')
     if id_deporte is not None:
@@ -163,6 +164,16 @@ def validar_campos_obligatorios(datos):
 
 def validar_nueva_cancha(datos):
     errores = validar_campos_obligatorios(datos)
+    campos_permitidos = set(CAMPOS_OBLIGATORIOS) | {'techada', 'activa'}
+    campos_desconocidos = set(datos) - campos_permitidos
+    if campos_desconocidos:
+        errores.append(
+            crear_error(
+                f"Campos desconocidos: {', '.join(sorted(campos_desconocidos))}",
+                codigo='CAMPO_DESCONOCIDO',
+                incluir_status=True,
+            )
+        )
 
     if errores:
         return errores, None

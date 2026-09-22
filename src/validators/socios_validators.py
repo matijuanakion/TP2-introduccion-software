@@ -32,8 +32,20 @@ def validar_filtros_socios(parametros):
     return None, filtros
 
 
-def validar_nuevo_socio(datos):
+def validar_nuevo_socio(datos, permitir_activo=False):
     errores = []
+    campos_permitidos = {'nombre', 'email'}
+    if permitir_activo:
+        campos_permitidos.add('activo')
+    campos_desconocidos = set(datos) - campos_permitidos
+    if campos_desconocidos:
+        errores.append(
+            crear_error(
+                f"Campos desconocidos: {', '.join(sorted(campos_desconocidos))}",
+                codigo='CAMPO_DESCONOCIDO',
+                incluir_status=True,
+            )
+        )
 
     for campo in ('nombre', 'email'):
         if campo not in datos:
@@ -135,7 +147,10 @@ def validar_actualizacion_socio(datos, socio_actual):
     }
     datos_completos.update({campo: datos[campo] for campo in datos if campo in CAMPOS_EDITABLES})
 
-    errores_alta, socio_validado = validar_nuevo_socio(datos_completos)
+    errores_alta, socio_validado = validar_nuevo_socio(
+        datos_completos,
+        permitir_activo=True,
+    )
     if errores_alta:
         errores.extend(errores_alta)
 

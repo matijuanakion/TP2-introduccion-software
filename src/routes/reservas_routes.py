@@ -1,15 +1,24 @@
 from flask import Blueprint, request
 
 from src.errores import error_respuesta
-from src.services.reservas_services import filtrar_reservas, procesar_nueva_reserva
+from src.services.reservas_services import (
+    consultar_reserva,
+    filtrar_reservas,
+    procesar_estado_reserva,
+    procesar_nueva_reserva,
+)
 from src.utils import (
     armar_links,
     obtener_datos_json,
     obtener_paginacion,
     respuesta_validacion,
+    validar_id,
     validar_parametros,
 )
-from src.validators.reservas_validators import validar_filtros_reservas
+from src.validators.reservas_validators import (
+    validar_estado_reserva,
+    validar_filtros_reservas,
+)
 
 
 reservas_bp = Blueprint('reservas_bp', __name__)
@@ -62,6 +71,54 @@ def listar_reservas():
             return "", 204
 
         return {"reservas": reservas, "_links": links}, 200
+    except Exception as exc:
+        return error_respuesta(
+            "Error interno del servidor",
+            codigo="ERROR_INTERNO",
+            descripcion=str(exc),
+        ), 500
+
+
+@reservas_bp.route('/reservas/<id_reserva>', methods=['GET'])
+def obtener_reserva(id_reserva):
+    try:
+        error = validar_parametros()
+        if error:
+            return error
+
+        id_numerico, error, status_code = validar_id(id_reserva)
+        if error:
+            return error, status_code
+
+        return consultar_reserva(id_numerico)
+    except Exception as exc:
+        return error_respuesta(
+            "Error interno del servidor",
+            codigo="ERROR_INTERNO",
+            descripcion=str(exc),
+        ), 500
+
+
+@reservas_bp.route('/reservas/<id_reserva>/estado', methods=['PUT'])
+def actualizar_estado(id_reserva):
+    try:
+        error = validar_parametros()
+        if error:
+            return error
+
+        id_numerico, error, status_code = validar_id(id_reserva)
+        if error:
+            return error, status_code
+
+        datos, error, status_code = obtener_datos_json()
+        if error:
+            return error, status_code
+
+        errores, estado = validar_estado_reserva(datos)
+        if errores:
+            return respuesta_validacion(errores)
+
+        return procesar_estado_reserva(id_numerico, estado)
     except Exception as exc:
         return error_respuesta(
             "Error interno del servidor",

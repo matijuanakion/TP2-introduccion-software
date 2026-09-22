@@ -5,8 +5,17 @@ from src.repositories.reservas_repositories import (
     contar_reservas,
     guardar_reserva,
     obtener_reservas_paginadas,
+    obtener_reserva_por_id,
+    obtener_reservas_relacionadas,
+    actualizar_estado_reserva,
 )
+from src.repositories.canchas_repositories import obtener_cancha_por_id
+from src.repositories.socios_repositories import obtener_socio_por_id
 from src.validators.reservas_validators import validar_nueva_reserva
+
+
+def _fecha_hora(valor):
+    return datetime.fromisoformat(str(valor).replace(' ', 'T')).replace(tzinfo=None)
 
 
 def filtrar_reservas(filtros, limit, offset):
@@ -60,20 +69,87 @@ def procesar_nueva_reserva(datos):
             ),
         )
 
-    resultado = guardar_reserva(nueva_reserva)
-    errores = {
-        'socio_inexistente': ("No existe un socio con ese id", 'SOCIO_INEXISTENTE', 404),
-        'socio_inactivo': ("El socio no está activo", 'SOCIO_INACTIVO', 409),
-        'cancha_inexistente': ("No existe una cancha con ese id", 'CANCHA_INEXISTENTE', 404),
-        'cancha_inactiva': ("La cancha no está activa", 'CANCHA_INACTIVA', 409),
-        'superposicion': (
+    socio = obtener_socio_por_id(nueva_reserva['id_socio'])
+    if socio is None:
+        return error_respuesta(
+            'No existe un socio con ese id', codigo='SOCIO_INEXISTENTE'
+        ), 404
+    if not socio['activo']:
+        return error_respuesta(
+            'El socio no está activo', codigo='SOCIO_INACTIVO'
+        ), 409
+
+    cancha = obtener_cancha_por_id(nueva_reserva['id_cancha'])
+    if cancha is None:
+        return error_respuesta(
+            'No existe una cancha con ese id', codigo='CANCHA_INEXISTENTE'
+        ), 404
+    if not cancha['activa']:
+        return error_respuesta(
+            'La cancha no está activa', codigo='CANCHA_INACTIVA'
+        ), 409
+
+    reservas_relacionadas = obtener_reservas_relacionadas(
+        nueva_reserva['id_socio'], nueva_reserva['id_cancha']
+    )
+    if any(
+        reserva['estado'] == 'confirmada'
+        and _fecha_hora(reserva['fecha_hora_inicio']) < _fecha_hora(nueva_reserva['fecha_hora_fin'])
+        and _fecha_hora(reserva['fecha_hora_fin']) > _fecha_hora(nueva_reserva['fecha_hora_inicio'])
+        for reserva in reservas_relacionadas
+    ):
+        return error_respuesta(
             'La reserva se superpone con otra reserva del socio o de la cancha',
-            'RESERVA_SUPERPUESTA',
-            409,
-        ),
-    }
-    if isinstance(resultado, str) and resultado in errores:
-        mensaje, codigo, status_code = errores[resultado]
-        return error_respuesta(mensaje, codigo=codigo), status_code
+            codigo='RESERVA_SUPERPUESTA',
+        ), 409
+
+    nueva_reserva['estado'] = 'confirmada'
+    nueva_reserva['precio_hora'] = cancha['precio_hora']
+    nueva_reserva['precio_total'] = int(
+        cancha['precio_hora'] * nueva_reserva.pop('duracion_horas')
+    )
+    resultado = guardar_reserva(nueva_reserva)
 
     return {'mensaje': 'Reserva creada', 'reserva': resultado}, 201
+
+
+def consultar_reserva(id_reserva):
+    reserva = obtener_reserva_por_id(id_reserva)
+    if reserva is None:
+        return error_respuesta(
+            f'No existe una reserva con id {id_reserva}',
+            codigo='RESERVA_INEXISTENTE',
+        ), 404
+    return _formatear_reserva(reserva), 200
+
+
+def procesar_estado_reserva(id_reserva, estado):
+    reserva = obtener_reserva_por_id(id_reserva)
+    if reserva is None:
+        return error_respuesta(
+            f'No existe una reserva con id {id_reserva}',
+            codigo='RESERVA_INEXISTENTE',
+        ), 404
+
+    if estado == reserva['estado']:
+        return '', 204
+
+    inicio = _fecha_hora(reserva['fecha_hora_inicio'])
+    fin = _fecha_hora(reserva['fecha_hora_fin'])
+    ahora = datetime.now(timezone(timedelta(hours=-3))).replace(tzinfo=None)
+
+    permitido = (
+        reserva['estado'] == 'confirmada'
+        and (
+            (estado == 'cancelada' and ahora < inicio)
+            or (estado == 'finalizada' and ahora >= fin)
+        )
+    )
+    if not permitido:
+        return error_respuesta(
+            f'No se puede cambiar una reserva de {reserva["estado"]} a {estado}',
+            codigo='TRANSICION_ESTADO_INVALIDA',
+        ), 409
+
+    actualizar_estado_reserva(id_reserva, estado)
+    return '', 204

@@ -63,56 +63,19 @@ def contar_canchas(filtros):
     return cantidad
 
 
-def _condiciones_disponibilidad(filtros, fecha_hora_inicio, fecha_hora_fin):
-    condiciones = [
-        "c.activa = 1",
-        "NOT EXISTS ("
-        "SELECT 1 FROM reservas r "
-        "WHERE r.id_cancha = c.id "
-        "AND r.estado NOT IN ('cancelada', 'finalizada') "
-        "AND r.fecha_hora_inicio < %s "
-        "AND r.fecha_hora_fin > %s"
-        ")",
-        "NOT EXISTS ("
-        "SELECT 1 FROM bloqueos b "
-        "WHERE b.id_cancha = c.id "
-        "AND b.fecha = %s "
-        "AND b.hora_inicio < %s "
-        "AND b.hora_fin > %s"
-        ")",
-    ]
-    parametros = [
-        fecha_hora_fin,
-        fecha_hora_inicio,
-        filtros['fecha'],
-        filtros['hora_fin'],
-        filtros['hora_inicio'],
-    ]
-
-    if filtros.get('id_deporte') is not None:
-        condiciones.append("c.id_deporte = %s")
-        parametros.append(filtros['id_deporte'])
-
-    if filtros.get('techada') is not None:
-        condiciones.append("c.techada = %s")
-        parametros.append(1 if filtros['techada'] else 0)
-
-    return " WHERE " + " AND ".join(condiciones), parametros
-
-
-def obtener_canchas_disponibles(filtros, limit, offset):
+def obtener_canchas_para_disponibilidad(filtros):
     conexion, cursor = obtener_cursor()
 
-    fecha_hora_inicio = f"{filtros['fecha']} {filtros['hora_inicio']}"
-    fecha_hora_fin = f"{filtros['fecha']} {filtros['hora_fin']}"
-    where, parametros = _condiciones_disponibilidad(
-        filtros, fecha_hora_inicio, fecha_hora_fin
-    )
+    filtros_canchas = {
+        campo: filtros[campo]
+        for campo in ('id_deporte', 'techada')
+        if filtros.get(campo) is not None
+    }
+    where, parametros = _condiciones_para(filtros_canchas)
 
     cursor.execute(
-        "SELECT c.* FROM canchas c" + where +
-        " ORDER BY c.id ASC LIMIT %s OFFSET %s",
-        parametros + [limit, offset],
+        "SELECT * FROM canchas" + where + " ORDER BY id ASC",
+        parametros,
     )
     filas = cursor.fetchall()
     conexion.close()
@@ -127,19 +90,18 @@ def obtener_canchas_disponibles(filtros, limit, offset):
     return canchas
 
 
-def contar_canchas_disponibles(filtros):
+def obtener_bloqueos_por_fecha(fecha):
     conexion, cursor = obtener_cursor()
 
-    fecha_hora_inicio = f"{filtros['fecha']} {filtros['hora_inicio']}"
-    fecha_hora_fin = f"{filtros['fecha']} {filtros['hora_fin']}"
-    where, parametros = _condiciones_disponibilidad(
-        filtros, fecha_hora_inicio, fecha_hora_fin
-    )
-
-    cursor.execute("SELECT COUNT(*) AS cantidad FROM canchas c" + where, parametros)
-    cantidad = cursor.fetchone()['cantidad']
-    conexion.close()
-    return cantidad
+    try:
+        cursor.execute(
+            "SELECT id_cancha, fecha, hora_inicio, hora_fin FROM bloqueos WHERE fecha = %s",
+            (fecha,),
+        )
+        return [dict(fila) for fila in cursor.fetchall()]
+    finally:
+        cursor.close()
+        conexion.close()
 
 
 def guardar_cancha(nueva_cancha):
@@ -214,37 +176,26 @@ def actualizar_cancha(id_cancha, cancha):
         conexion.close()
 
 
-def eliminar_cancha_si_sin_reservas(id_cancha):
+def contar_reservas_de_cancha(id_cancha):
     conexion, cursor = obtener_cursor()
 
     try:
         cursor.execute(
-            "SELECT id FROM canchas WHERE id = %s FOR UPDATE",
-            (id_cancha,)
+            "SELECT COUNT(*) AS cantidad FROM reservas WHERE id_cancha = %s",
+            (id_cancha,),
         )
+        return cursor.fetchone()['cantidad']
+    finally:
+        cursor.close()
+        conexion.close()
 
-        if cursor.fetchone() is None:
-            conexion.rollback()
-            return 'inexistente'
 
-        cursor.execute(
-            "SELECT 1 FROM reservas WHERE id_cancha = %s LIMIT 1",
-            (id_cancha,)
-        )
+def eliminar_cancha(id_cancha):
+    conexion, cursor = obtener_cursor()
 
-        if cursor.fetchone() is not None:
-            conexion.rollback()
-            return 'con_reservas'
-
-        cursor.execute(
-            "DELETE FROM canchas WHERE id = %s",
-            (id_cancha,)
-        )
+    try:
+        cursor.execute("DELETE FROM canchas WHERE id = %s", (id_cancha,))
         conexion.commit()
-        return 'eliminada'
-    except Exception:
-        conexion.rollback()
-        raise
     finally:
         cursor.close()
         conexion.close()
