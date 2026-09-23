@@ -11,7 +11,7 @@ INSERT INTO socios (nombre, email, activo)
 SELECT 'María Rodríguez', 'maria.rodriguez@example.com', 1
 WHERE NOT EXISTS (SELECT 1 FROM socios WHERE email = 'maria.rodriguez@example.com');
 
--- Canchas extra (solo si aún no existen)
+-- Canchas extra
 INSERT INTO canchas (nombre, id_deporte, precio_hora, techada, activa)
 SELECT 'Cancha de Futbol dop', 1, 55000, 0, 1
 WHERE NOT EXISTS (SELECT 1 FROM canchas WHERE nombre = 'Cancha de Tenis Dop');

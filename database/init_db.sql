@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------------------------
--- Deportes precargados (solo lectura via API)
+-- Deportes precargados
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS deportes (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS reservas (
 ) DEFAULT CHARSET=utf8mb4;
 
 -- ---------------------------------------------------------------------------
--- Bloqueos por mantenimiento (extension opcional)
+-- Bloqueos por mantenimiento
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS bloqueos (
     id INT AUTO_INCREMENT PRIMARY KEY,

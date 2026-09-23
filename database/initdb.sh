@@ -1,6 +1,5 @@
 #!/bin/sh
 # Ejecuta los .sql con --default-character-set=utf8mb4 para no romper los acentos.
-# El entrypoint de MySQL corre este script en la primer inicialización del volumen.
 
 set -e
 
