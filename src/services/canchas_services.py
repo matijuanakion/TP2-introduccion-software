@@ -36,6 +36,10 @@ def filtrar_canchas_disponibles(filtros, limit, offset):
     inicio = datetime.fromisoformat(inicio)
     fin = datetime.fromisoformat(fin)
 
+    def segundos(valor):
+        horas, minutos, segundos_hora = map(int, str(valor).split(':'))
+        return horas * 3600 + minutos * 60 + segundos_hora
+
     def se_superpone(intervalo_inicio, intervalo_fin):
         reserva_inicio = datetime.fromisoformat(str(intervalo_inicio).replace(' ', 'T'))
         reserva_fin = datetime.fromisoformat(str(intervalo_fin).replace(' ', 'T'))
@@ -57,8 +61,8 @@ def filtrar_canchas_disponibles(filtros, limit, offset):
         )
         tiene_bloqueo = any(
             bloqueo['id_cancha'] == cancha['id']
-            and str(bloqueo['hora_inicio']) < filtros['hora_fin']
-            and str(bloqueo['hora_fin']) > filtros['hora_inicio']
+            and segundos(bloqueo['hora_inicio']) < segundos(filtros['hora_fin'])
+            and segundos(bloqueo['hora_fin']) > segundos(filtros['hora_inicio'])
             for bloqueo in bloqueos
         )
         if not tiene_reserva and not tiene_bloqueo:

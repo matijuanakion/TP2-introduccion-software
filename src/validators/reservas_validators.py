@@ -173,6 +173,28 @@ def validar_nueva_reserva(datos):
     }
 
 
+def validar_reserva_recurrente(datos):
+    campos = set(CAMPOS_OBLIGATORIOS) | {'cantidad_semanas'}
+    errores = []
+    desconocidos = set(datos) - campos
+    if desconocidos:
+        errores.append(crear_error(
+            f"Campos desconocidos: {', '.join(sorted(desconocidos))}",
+            codigo='CAMPO_DESCONOCIDO', incluir_status=True,
+        ))
+    cantidad = datos.get('cantidad_semanas')
+    if not isinstance(cantidad, int) or isinstance(cantidad, bool) or not 2 <= cantidad <= 12:
+        errores.append(crear_error(
+            "'cantidad_semanas' debe ser un entero entre 2 y 12",
+            codigo='CANTIDAD_SEMANAS_INVALIDA', incluir_status=True,
+        ))
+    datos_reserva = {campo: datos.get(campo) for campo in CAMPOS_OBLIGATORIOS}
+    errores_reserva, _ = validar_nueva_reserva(datos_reserva)
+    if errores_reserva:
+        errores.extend(errores_reserva)
+    return (errores or None), cantidad
+
+
 def validar_estado_reserva(datos):
     if set(datos) != {'estado'}:
         return [

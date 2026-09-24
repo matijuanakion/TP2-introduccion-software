@@ -6,6 +6,7 @@ from src.services.reservas_services import (
     filtrar_reservas,
     procesar_estado_reserva,
     procesar_nueva_reserva,
+    procesar_reservas_recurrentes,
 )
 from src.utils import (
     armar_links,
@@ -22,6 +23,19 @@ from src.validators.reservas_validators import (
 
 
 reservas_bp = Blueprint('reservas_bp', __name__)
+
+
+@reservas_bp.route('/reservas/recurrentes', methods=['POST'])
+def crear_reservas_recurrentes():
+    try:
+        datos, error, status_code = obtener_datos_json()
+        if error:
+            return error, status_code
+        return procesar_reservas_recurrentes(datos)
+    except Exception:
+        return error_respuesta(
+            'Error interno del servidor', codigo='ERROR_INTERNO'
+        ), 500
 
 
 @reservas_bp.route('/reservas', methods=['POST'])

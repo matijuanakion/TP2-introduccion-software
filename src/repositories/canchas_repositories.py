@@ -100,6 +100,14 @@ def obtener_bloqueos_por_fecha(fecha):
         conexion.close()
 
 
+def obtener_bloqueos_relacionados_en_cursor(id_cancha, fecha, cursor):
+    cursor.execute(
+        "SELECT * FROM bloqueos WHERE id_cancha = %s AND fecha = %s FOR UPDATE",
+        (id_cancha, fecha),
+    )
+    return [dict(fila) for fila in cursor.fetchall()]
+
+
 def guardar_cancha(nueva_cancha):
     conexion, cursor = obtener_cursor()
     try:

@@ -164,6 +164,30 @@ def guardar_reserva_en_transaccion(nueva_reserva, conexion, cursor):
     conexion.commit()
     return reserva_guardada
 
+
+def insertar_reserva_en_transaccion(nueva_reserva, cursor):
+    cursor.execute(
+        """
+        INSERT INTO reservas (
+            id_socio, id_cancha, fecha_hora_inicio, fecha_hora_fin,
+            estado, precio_hora, precio_total
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """,
+        (
+            nueva_reserva['id_socio'],
+            nueva_reserva['id_cancha'],
+            nueva_reserva['fecha_hora_inicio'],
+            nueva_reserva['fecha_hora_fin'],
+            nueva_reserva['estado'],
+            nueva_reserva['precio_hora'],
+            nueva_reserva['precio_total'],
+        ),
+    )
+    reserva_guardada = dict(nueva_reserva)
+    reserva_guardada['id'] = cursor.lastrowid
+    return reserva_guardada
+
 def actualizar_estado_reserva(id_reserva, estado):
     conexion, cursor = obtener_cursor()
 
