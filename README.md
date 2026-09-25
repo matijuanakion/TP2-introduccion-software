@@ -5,7 +5,7 @@
 - Santino Nicolás Andreatta - 116024
 - Galo Fernandez Achille - 116037
 - Matias Mattos - 116125
-- nombre y apellido - padron
+- Lucio Pompei - 116611
 - nombre y apellido - padron
 - nombre y apellido - padron
 - nombre y apellido - padron
