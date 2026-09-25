@@ -3,7 +3,7 @@
 ## Integrantes
 
 - Santino Nicolás Andreatta - 116024
-- nombre y apellido - padron
+- Galo Fernandez Achille - 116037
 - nombre y apellido - padron
 - nombre y apellido - padron
 - nombre y apellido - padron
