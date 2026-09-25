@@ -99,4 +99,5 @@ def procesar_actualizacion_socio(id_socio, datos):
             codigo="EMAIL_DUPLICADO",
         ), 409
 
-    return "", 204
+    socio_actualizado['id'] = id_socio
+    return socio_actualizado, 200

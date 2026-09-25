@@ -1,4 +1,20 @@
+from datetime import timedelta
+
 from src.db import obtener_cursor
+
+
+def _formatear_bloqueo(bloqueo):
+    resultado = dict(bloqueo)
+    if hasattr(resultado['fecha'], 'isoformat'):
+        resultado['fecha'] = resultado['fecha'].isoformat()
+    for campo in ('hora_inicio', 'hora_fin'):
+        valor = resultado[campo]
+        if isinstance(valor, timedelta):
+            segundos = int(valor.total_seconds())
+            horas, resto = divmod(segundos, 3600)
+            minutos, segundos = divmod(resto, 60)
+            resultado[campo] = f'{horas:02d}:{minutos:02d}:{segundos:02d}'
+    return resultado
 
 
 def _condiciones(filtros):
@@ -19,10 +35,10 @@ def obtener_bloqueos(filtros, limit, offset):
     try:
         where, parametros = _condiciones(filtros)
         cursor.execute(
-            'SELECT * FROM bloqueos' + where + ' ORDER BY fecha, hora_inicio, id LIMIT %s OFFSET %s',
+            'SELECT * FROM bloqueos' + where + ' ORDER BY id ASC LIMIT %s OFFSET %s',
             parametros + [limit, offset],
         )
-        return [dict(fila) for fila in cursor.fetchall()]
+        return [_formatear_bloqueo(fila) for fila in cursor.fetchall()]
     finally:
         cursor.close()
         conexion.close()

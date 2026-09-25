@@ -142,7 +142,8 @@ def procesar_actualizacion_cancha(id_cancha, datos):
         )
 
     actualizar_cancha(id_cancha, cancha_actualizada)
-    return "", 204
+    cancha_actualizada['id'] = id_cancha
+    return cancha_actualizada, 200
 
 
 def procesar_eliminacion_cancha(id_cancha):

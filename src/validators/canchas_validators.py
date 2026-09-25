@@ -178,13 +178,21 @@ def validar_nueva_cancha(datos):
     if errores:
         return errores, None
 
-    nombre = str(datos['nombre']).strip()
+    nombre = datos['nombre']
     id_deporte = datos['id_deporte']
     precio = datos['precio_hora']
     techada = datos.get('techada', False)
     activa = datos.get('activa', True)
 
-    if nombre == "":
+    if not isinstance(nombre, str):
+        errores.append(
+            crear_error(
+                "El campo 'nombre' debe ser un texto",
+                codigo="TIPO_INVALIDO",
+                incluir_status=True,
+            )
+        )
+    elif not nombre.strip():
         errores.append(
             crear_error(
                 "El campo 'nombre' no puede estar vacío o ser solo espacios",
@@ -193,7 +201,7 @@ def validar_nueva_cancha(datos):
             )
         )
 
-    if not isinstance(id_deporte, int):
+    if not isinstance(id_deporte, int) or isinstance(id_deporte, bool):
         errores.append(
             crear_error(
                 "El campo 'id_deporte' debe ser un entero",
@@ -211,7 +219,7 @@ def validar_nueva_cancha(datos):
             )
         )
 
-    if not isinstance(precio, int):
+    if not isinstance(precio, int) or isinstance(precio, bool):
         errores.append(
             crear_error(
                 "El campo 'precio_hora' debe ser un entero",
@@ -250,7 +258,7 @@ def validar_nueva_cancha(datos):
         return errores, None
 
     cancha = {
-        "nombre": nombre,
+        "nombre": nombre.strip(),
         "id_deporte": id_deporte,
         "precio_hora": precio,
         "techada": techada,

@@ -15,7 +15,8 @@ from src.repositories.canchas_repositories import obtener_cancha_por_id_en_curso
 from src.repositories.canchas_repositories import obtener_bloqueos_relacionados_en_cursor
 from src.repositories.socios_repositories import obtener_socio_por_id_en_cursor
 from src.validators.reservas_validators import validar_nueva_reserva
-
+from src.repositories.canchas_repositories import obtener_bloqueos_relacionados_en_cursor
+from src.validators.reservas_validators import validar_reserva_recurrente
 
 def _fecha_hora(valor):
     return datetime.fromisoformat(str(valor).replace(' ', 'T')).replace(tzinfo=None)
@@ -151,8 +152,6 @@ def procesar_nueva_reserva(datos):
 
 
 def procesar_reservas_recurrentes(datos):
-    from src.repositories.canchas_repositories import obtener_bloqueos_relacionados_en_cursor
-    from src.validators.reservas_validators import validar_reserva_recurrente
 
     errores, cantidad = validar_reserva_recurrente(datos)
     if errores:
@@ -265,7 +264,7 @@ def procesar_estado_reserva(id_reserva, estado):
         ), 404
 
     if estado == reserva['estado']:
-        return '', 204
+        return _formatear_reserva(reserva), 200
 
     inicio = _fecha_hora(reserva['fecha_hora_inicio'])
     fin = _fecha_hora(reserva['fecha_hora_fin'])
@@ -285,4 +284,5 @@ def procesar_estado_reserva(id_reserva, estado):
         ), 409
 
     actualizar_estado_reserva(id_reserva, estado)
-    return '', 204
+    reserva['estado'] = estado
+    return _formatear_reserva(reserva), 200
