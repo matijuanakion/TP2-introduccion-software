@@ -41,8 +41,10 @@ docker compose up --build -d
 ## Configuración
 
 La aplicación lee variables de entorno desde un archivo `.env` opcional.
-Crear ese archivo en la raíz del proyecto si se necesita cambiar los valores
-predeterminados:
+Compose carga `.env`, pero no `.env.template`; para usar la plantilla, copiarla
+como `.env` en la raíz del proyecto. `FLASK_PORT` configura tanto el puerto
+interno de Flask como el publicado en el host, y `FLASK_DEBUG` configura
+el modo debug. `FLASK_HOST` se mantiene en `0.0.0.0` dentro del contenedor para aceptar
 
 ```dotenv
 DB_HOST=db
