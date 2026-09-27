@@ -6,9 +6,9 @@
 - Galo Fernandez Achille - 116037
 - Matias Mattos - 116125
 - Lucio Pompei - 116611
-- nombre y apellido - padron
-- nombre y apellido - padron
-- nombre y apellido - padron
+- Valentina Carera - 116311
+- Kiara Micaela Koo - 116282
+- Lucía Saint Martin - 116324
 - nombre y apellido - padron
 - nombre y apellido - padron
 
