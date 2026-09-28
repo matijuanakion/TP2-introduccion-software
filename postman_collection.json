@@ -1,0 +1,318 @@
+{
+  "info": {
+    "_postman_id": "a1435f72-f6a2-4fda-9e16-8db11c11a500",
+    "name": "API Club Deportivo - TP2",
+    "description": "Colección para probar la API de reservas del Club Deportivo. Cambiá baseUrl si usás otro host o puerto.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:5000", "type": "string" },
+    { "key": "idCancha", "value": "1", "type": "string" },
+    { "key": "idSocio", "value": "1", "type": "string" },
+    { "key": "idReserva", "value": "1", "type": "string" },
+    { "key": "idBloqueo", "value": "1", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Deportes",
+      "item": [
+        {
+          "name": "Listar deportes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/deportes",
+            "description": "Lista los deportes precargados."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Canchas",
+      "item": [
+        {
+          "name": "Listar canchas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/canchas?id_deporte=1&nombre=Cancha&techada=false&activa=true&_limit=10&_offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["canchas"],
+              "query": [
+                { "key": "id_deporte", "value": "1", "description": "Filtrar por deporte" },
+                { "key": "nombre", "value": "Cancha", "description": "Búsqueda parcial por nombre" },
+                { "key": "techada", "value": "false", "description": "Filtrar por cancha techada" },
+                { "key": "activa", "value": "true", "description": "Filtrar por estado activo" },
+                { "key": "_limit", "value": "10" },
+                { "key": "_offset", "value": "0" }
+              ]
+            },
+            "description": "Los filtros son opcionales; se pueden quitar desde Params."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear cancha",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cancha de fútbol 5\",\n  \"id_deporte\": 1,\n  \"precio_hora\": 1000000,\n  \"techada\": false,\n  \"activa\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/canchas",
+            "description": "precio_hora está expresado en centavos."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener cancha por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/canchas/{{idCancha}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar cancha",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"precio_hora\": 1200000,\n  \"techada\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/canchas/{{idCancha}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar cancha",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/canchas/{{idCancha}}",
+            "description": "Solo se puede eliminar si no tiene reservas asociadas."
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar canchas disponibles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/canchas/disponibles?fecha=2026-10-15&hora_inicio=18:00:00&hora_fin=20:00:00&id_deporte=1&techada=false&_limit=10&_offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["canchas", "disponibles"],
+              "query": [
+                { "key": "fecha", "value": "2026-10-15" },
+                { "key": "hora_inicio", "value": "18:00:00" },
+                { "key": "hora_fin", "value": "20:00:00" },
+                { "key": "id_deporte", "value": "1", "disabled": true },
+                { "key": "techada", "value": "false", "disabled": true },
+                { "key": "_limit", "value": "10", "disabled": true },
+                { "key": "_offset", "value": "0", "disabled": true }
+              ]
+            },
+            "description": "fecha, hora_inicio y hora_fin son obligatorios."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Socios",
+      "item": [
+        {
+          "name": "Listar socios",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/socios?nombre=Juan&activo=true&_limit=10&_offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["socios"],
+              "query": [
+                { "key": "nombre", "value": "Juan", "description": "Búsqueda parcial por nombre" },
+                { "key": "activo", "value": "true" },
+                { "key": "_limit", "value": "10" },
+                { "key": "_offset", "value": "0" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear socio",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Juan Pérez\",\n  \"email\": \"juan.perez@example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/socios"
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener socio por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/socios/{{idSocio}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar socio",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Juan Pérez\",\n  \"activo\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/socios/{{idSocio}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reservas",
+      "item": [
+        {
+          "name": "Listar reservas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reservas?id_cancha=1&id_socio=1&estado=confirmada&fecha_desde=2026-10-01&fecha_hasta=2026-10-31&_limit=10&_offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["reservas"],
+              "query": [
+                { "key": "id_cancha", "value": "1" },
+                { "key": "id_socio", "value": "1" },
+                { "key": "estado", "value": "confirmada" },
+                { "key": "fecha_desde", "value": "2026-10-01" },
+                { "key": "fecha_hasta", "value": "2026-10-31" },
+                { "key": "_limit", "value": "10" },
+                { "key": "_offset", "value": "0" }
+              ]
+            },
+            "description": "Los filtros son opcionales; se pueden quitar desde Params."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear reserva",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_socio\": 1,\n  \"id_cancha\": 1,\n  \"fecha_hora_inicio\": \"2026-10-15T18:00:00.000000-03:00\",\n  \"fecha_hora_fin\": \"2026-10-15T20:00:00.000000-03:00\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/reservas"
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener reserva por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/reservas/{{idReserva}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar estado de reserva",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"cancelada\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/reservas/{{idReserva}}/estado"
+          },
+          "response": []
+        },
+        {
+          "name": "Crear reservas recurrentes",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_socio\": 1,\n  \"id_cancha\": 1,\n  \"fecha_hora_inicio\": \"2026-10-15T18:00:00.000000-03:00\",\n  \"fecha_hora_fin\": \"2026-10-15T20:00:00.000000-03:00\",\n  \"cantidad_semanas\": 4\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/reservas/recurrentes",
+            "description": "La cantidad de semanas debe estar entre 2 y 12."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Bloqueos (extensión opcional)",
+      "item": [
+        {
+          "name": "Listar bloqueos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bloqueos?id_cancha=1&fecha=2026-10-20&_limit=10&_offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["bloqueos"],
+              "query": [
+                { "key": "id_cancha", "value": "1" },
+                { "key": "fecha", "value": "2026-10-20" },
+                { "key": "_limit", "value": "10" },
+                { "key": "_offset", "value": "0" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear bloqueo",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_cancha\": 1,\n  \"fecha\": \"2026-10-20\",\n  \"hora_inicio\": \"08:00:00\",\n  \"hora_fin\": \"12:00:00\",\n  \"motivo\": \"Mantenimiento de iluminación\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/bloqueos"
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar bloqueo",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/bloqueos/{{idBloqueo}}"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
