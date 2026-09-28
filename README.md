@@ -10,7 +10,7 @@
 - Kiara Micaela Koo - 116282
 - Lucía Saint Martin - 116324
 - Joaquin Berzunces - 116175
-- nombre y apellido - padron
+- Nicolas Agustin Gonzalez Sanchez - 116641
 
 ## Descripción
 
